@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Saturday Westside Crawl</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: a transit style line map. Controls up top, four route cards, one schematic map, then each route as a stop by stop strip. */
+:root{
+  --bg:#eef2f5; --surface:#ffffff; --ink:#102030; --muted:#566577; --line:#d3dbe3; --focus:#0a64a8;
+  --bw:#1677c9; --ln:#23885a; --main:#5d6b7a; --wi:#c96a12; --pi:#a2378a;
+  --flag:#b4231a; --flag-bg:#fde8e6; --best-bg:#fff1c2; --best-ink:#6b4e00;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d151d; --surface:#14202b; --ink:#e5edf4; --muted:#9db0c2; --line:#263645; --focus:#6cb6f0;
+    --bw:#4ea3ea; --ln:#49bf85; --main:#8b98a6; --wi:#f0a24f; --pi:#d46cbd;
+    --flag:#ff8a80; --flag-bg:#3a1a18; --best-bg:#3a3113; --best-ink:#f3cf6b; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d151d; --surface:#14202b; --ink:#e5edf4; --muted:#9db0c2; --line:#263645; --focus:#6cb6f0;
+  --bw:#4ea3ea; --ln:#49bf85; --main:#8b98a6; --wi:#f0a24f; --pi:#d46cbd;
+  --flag:#ff8a80; --flag-bg:#3a1a18; --best-bg:#3a3113; --best-ink:#f3cf6b; color-scheme:dark;
+}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:40px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.05;text-wrap:balance;margin:0;letter-spacing:.01em}
+h1{font-size:clamp(2.4rem,7vw,4rem)}
+h2{font-size:clamp(1.6rem,4vw,2.1rem)}
+p{margin:0}
+a{color:var(--focus)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.eyebrow{font-family:var(--display);font-weight:600;font-size:1rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.top{display:grid;gap:14px}
+.lede{max-width:62ch;font-size:1.08rem}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:12px;margin-top:6px}
+.controls{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:start}
+.field{display:grid;gap:6px;min-width:0}
+.field label,.field legend{font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:0}
+.field input[type=time],.field input[type=number]{font:inherit;font-variant-numeric:tabular-nums;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0;width:9.5rem}
+fieldset.field{border:0;margin:0;padding:0}
+.checks{display:grid;gap:6px}
+label.check{display:flex;gap:10px;align-items:center;font-size:1rem;font-weight:700;letter-spacing:0;text-transform:none;color:var(--ink);cursor:pointer}
+label.check input{width:20px;height:20px;accent-color:var(--wi);margin:0;flex:none}
+label.check span{font-weight:400;color:var(--muted)}
+.hint{font-size:.92rem;color:var(--muted);max-width:75ch}
+.cards{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:640px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 18px 16px;display:grid;gap:12px;align-content:start;min-width:0}
+.card.best{border-color:var(--best-ink);box-shadow:0 0 0 1px var(--best-ink) inset}
+.card h3{font-size:1.55rem}
+.cardtop{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;min-height:28px}
+.num{font-family:var(--display);font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-size:.95rem}
+.badge{display:inline-block;font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--best-bg);color:var(--best-ink);white-space:nowrap}
+.line2{display:grid;grid-template-columns:1fr 1fr;height:6px;border-radius:3px;overflow:hidden}
+.line2 span:first-child{background:var(--sc)} .line2 span:last-child{background:var(--fc)}
+.stats{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-variant-numeric:tabular-nums}
+.stats dt{color:var(--muted);font-size:.92rem}
+.stats dd{margin:0;font-weight:700;text-align:right}
+.areas{font-size:.92rem;color:var(--muted)}
+.changes{margin:0;padding-left:1.1rem;font-size:.92rem;color:var(--muted);display:grid;gap:2px}
+.pill{display:inline-block;font-size:.8rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--flag-bg);color:var(--flag);white-space:nowrap}
+.pill.soft{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.ok{color:var(--ln);font-weight:700}
+.card a.go{font-weight:700;text-decoration:none}
+.card a.go:hover{text-decoration:underline}
+.mapsec{display:grid;gap:14px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.92rem}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{display:inline-block;width:26px;height:5px;border-radius:3px;background:var(--c)}
+.legend i.dia{width:11px;height:11px;border-radius:2px;transform:rotate(45deg);background:var(--surface);border:2.5px solid var(--wi);margin:0 6px}
+.mapbox{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;overflow-x:auto}
+.mapbox svg{display:block;width:100%;max-width:600px;height:auto;margin:0 auto}
+.note{font-size:.92rem;color:var(--muted);max-width:70ch}
+svg .seg{fill:none;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round}
+svg .seg.bw{stroke:var(--bw)} svg .seg.ln{stroke:var(--ln)} svg .seg.main{stroke:var(--main)} svg .seg.wi{stroke:var(--wi)} svg .seg.pi{stroke:var(--pi)}
+svg .stop{fill:var(--surface);stroke-width:2.5}
+svg .stop.bw{stroke:var(--bw)} svg .stop.ln{stroke:var(--ln)} svg .stop.main{stroke:var(--main)} svg .stop.wi{stroke:var(--wi)} svg .stop.pi{stroke:var(--pi)}
+svg .friend{fill:var(--surface);stroke:var(--wi);stroke-width:2.5}
+svg .friend.off{stroke:var(--muted);stroke-dasharray:3 2}
+svg .term{fill:var(--ink);stroke:var(--surface);stroke-width:2.5}
+svg .lbl{fill:var(--muted);font-family:var(--body);font-size:13px}
+svg .lbl.strong{fill:var(--ink);font-weight:700;font-size:14px}
+svg .lbl.fr{fill:var(--wi);font-weight:700}
+svg .lbl.fr.off{fill:var(--muted);font-weight:400}
+svg .scale{stroke:var(--ink);stroke-width:2}
+svg .north{fill:var(--ink)}
+.routes{display:grid;gap:14px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+summary{cursor:pointer;list-style:none;padding:16px 18px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline}
+summary::-webkit-details-marker{display:none}
+summary h3{font-size:1.45rem}
+summary .meta{color:var(--muted);font-variant-numeric:tabular-nums}
+summary::after{content:"Show stops";margin-left:auto;font-weight:700;color:var(--focus);font-size:.95rem}
+details[open] summary::after{content:"Hide stops"}
+.inner{padding:0 18px 18px;display:grid;gap:16px}
+.links{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.links li{min-width:0;overflow-wrap:anywhere}
+.callout{font-size:.95rem;border-left:4px solid var(--fc);padding:4px 0 4px 12px;display:grid;gap:4px}
+ol.strip{list-style:none;margin:0;padding:0}
+ol.strip li{display:grid;grid-template-columns:5.6rem 22px minmax(0,1fr);column-gap:10px}
+.time{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;padding-top:9px;white-space:nowrap}
+.rail{position:relative}
+.rail::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:5px;background:var(--seg)}
+ol.strip li:first-child .rail::before{top:14px}
+ol.strip li:last-child .rail::before{bottom:calc(100% - 14px)}
+.dot{position:absolute;left:3px;top:8px;width:15px;height:15px;border-radius:50%;background:var(--surface);border:3px solid var(--seg);box-sizing:border-box}
+.dot.term{background:var(--ink);border-color:var(--ink)}
+.dot.fr{border-radius:3px;transform:rotate(45deg);width:13px;height:13px;left:4px;top:9px}
+.stopbody{padding:6px 0 14px;min-width:0}
+li.skip .stopbody{padding:2px 0 10px}
+li.skip .sname{font-weight:400;font-size:.95rem;color:var(--muted);text-decoration:line-through}
+.walk{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.walk.long{color:var(--flag);font-weight:700}
+.sname{font-weight:700;font-size:1.05rem}
+.sdesc{font-size:.92rem;color:var(--muted)}
+.notes{display:grid;gap:10px;max-width:72ch}
+.notes ul{margin:0;padding-left:1.2rem;display:grid;gap:6px}
+@media (max-width:520px){ ol.strip li{grid-template-columns:4.6rem 22px minmax(0,1fr)} .time{font-size:.92rem} }
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+/* Viewers that don't run scripts (like a phone's attachment preview) see the plan written into the page; browsers swap in the live version. */
+html:not(.js) .js-only{display:none}
+.js .nojs-only,.js .static{display:none}
+.nojs-note{font-size:1rem;margin:0}
+</style>
+</head>
+<body>
+
+<script>document.documentElement.classList.add("js")</script>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Saturday · Venice to West LA on foot</p>
+    <h1>Saturday Westside Crawl</h1>
+    <p class="lede">Four ways to walk from Wally's place in Venice to Max and Eric's place in West LA, with up to 15 bars on the way. Each route is one start plus one finish: the Boardwalk or Lincoln start, then the Wilshire or Sawtelle finish, meeting at Jameson's on Main St. Most walks between bars run 5 to 20 min, and every route adjusts to when you leave and how long you stay at each bar.</p>
+    <div class="panel">
+      <p class="nojs-only nojs-note">This is the plan for leaving Wally's place at 1:00 PM, with 20 min at each bar and no friend stops. The leave time, bar time and friend switches only work when the page is opened in a web browser.</p>
+      <div class="controls js-only">
+        <div class="field"><label for="leave">Leave Wally's at</label><input id="leave" type="time" value="13:00" step="300"></div>
+        <div class="field"><label for="stay">Minutes at each bar</label><input id="stay" type="number" value="20" min="5" max="90" step="5"></div>
+        <fieldset class="field"><legend>Friend stops on routes 1 and 3</legend>
+          <div class="checks">
+            <label class="check"><input type="checkbox" id="f-benjamin">Benjamin's place <span>4th &amp; Idaho</span></label>
+            <label class="check"><input type="checkbox" id="f-david">David's place <span>16th &amp; Washington</span></label>
+          </div>
+        </fieldset>
+      </div>
+      <p class="hint js-only">Change any of these and all four routes update. If a bar would be closed when you get there, the route swaps in a nearby spot that's open or skips it, and anything it can't fix shows in red. A friend's place gets the same time as a bar. The best pick includes any friend stops you switched on, then has the most bars, then the fewest walks over 20 min.</p>
+    </div>
+  </header>
+
+  <section aria-labelledby="pick"><h2 id="pick" style="margin-bottom:14px">Pick a route</h2><div class="cards" id="cards"></div></section>
+
+  <section class="mapsec" aria-labelledby="maph">
+    <h2 id="maph">All four on one map</h2>
+    <div class="legend" id="legend"></div>
+    <div class="mapbox"><svg id="map" role="img" aria-label="Schematic map of the four crawl routes from Wally's place to Max and Eric's place"></svg></div>
+    <p class="note">Straight lines join the stops in order, so this shows the shape of each route, not the exact streets. North is up. The Google Maps links in each route give the real walking directions.</p>
+  </section>
+
+  <section class="routes" aria-labelledby="stopsh"><h2 id="stopsh">Every stop</h2><div class="routes" id="details"></div></section>
+
+</div>
+
+<script>
+const D = {"places": {"socal": {"name": "SoCal Vibes Co.", "type": "Bar", "addr": "1522 Abbot Kinney Blvd, Venice", "win": [[600, 1440]], "hours": "10 AM to 12 AM", "lat": 33.9898736, "lon": -118.4641958, "q": "SoCal Vibes Co. Abbot Kinney, 1522 Abbot Kinney Blvd, Venice, CA 90291", "kind": "bar"}, "kassi": {"name": "Kassi", "type": "Bar", "addr": "1697 Pacific Ave, Venice", "win": [[660, 1440]], "hours": "11 AM to 12 AM", "lat": 33.9869585, "lon": -118.4725003, "q": "Kassi, 1697 Pacific Ave, Venice, CA 90291", "kind": "bar"}, "sidewalk": {"name": "The Sidewalk Cafe", "type": "American restaurant", "addr": "1401 Ocean Front Walk, Venice", "win": [[480, 1320]], "hours": "8 AM to 10 PM", "lat": 33.9879633, "lon": -118.4744814, "q": "The Sidewalk Cafe, 1401 Ocean Front Walk, Venice, CA 90291", "kind": "bar"}, "vbc": {"name": "Venice Beach Club", "type": "Southern Italian restaurant", "addr": "2 Rose Ave, Venice", "win": [[660, 1320]], "hours": "11 AM to 10 PM", "lat": 33.9945646, "lon": -118.4803193, "q": "Venice Beach Club, 2 Rose Ave, Venice, CA 90291", "kind": "bar"}, "vwest": {"name": "The Venice West", "type": "Live music venue", "addr": "1717 Lincoln Blvd, Venice", "win": [[660, 900], [1080, 1560]], "hours": "11 AM to 3 PM, 6 PM to 2 AM", "lat": 33.9963379, "lon": -118.4578322, "q": "The Venice West, 1717 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "zinque": {"name": "Zinqué", "type": "French restaurant", "addr": "1440 Lincoln Blvd, Venice", "win": [[420, 1380]], "hours": "7 AM to 11 PM", "lat": 33.9978505, "lon": -118.4599806, "q": "Zinqué Venice, 1440 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "wurst": {"name": "Wurstküche", "type": "German restaurant", "addr": "625 Lincoln Blvd, Venice", "win": [[690, 1380]], "hours": "11:30 AM to 11 PM", "lat": 33.9997898, "lon": -118.4649875, "q": "Wurstküche Restaurant Venice Beach, 625 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "chulita": {"name": "Chulita", "type": "Mexican restaurant", "addr": "533 Rose Ave, Venice", "win": [[540, 1380]], "hours": "9 AM to 11 PM", "lat": 33.99886, "lon": -118.47311, "q": "Chulita, 533 Rose Ave, Venice, CA 90291", "kind": "bar"}, "jamesons": {"name": "Jameson's Pub", "type": "Irish pub", "addr": "2702 Main St, Santa Monica", "win": [[540, 1560]], "hours": "9 AM to 2 AM", "lat": 34.0007499, "lon": -118.4825824, "q": "Jameson’s Pub, 2702 Main St, Santa Monica, CA 90405", "kind": "bar"}, "sugarpalm": {"name": "Sugar Palm", "type": "Restaurant", "addr": "1819 Ocean Ave, Santa Monica", "win": [[420, 1320]], "hours": "7 AM to 10 PM", "lat": 34.0080458, "lon": -118.4903651, "q": "Sugar Palm Santa Monica, 1819 Ocean Ave, Santa Monica, CA 90401", "kind": "bar"}, "backyard": {"name": "The Backyard", "type": "Cocktail bar", "addr": "1657 Ocean Ave, Santa Monica", "win": [[600, 1380]], "hours": "10 AM to 11 PM", "lat": 34.010459, "lon": -118.4932664, "q": "The Backyard, 1657 Ocean Ave, Santa Monica, CA 90401", "kind": "bar"}, "courtside": {"name": "The Courtside Lounge", "type": "Restaurant", "addr": "123 Broadway, Santa Monica", "win": [[720, 1380]], "hours": "12 PM to 11 PM", "lat": 34.0133869, "lon": -118.4959401, "q": "The Courtside Lounge, 123 Broadway, Santa Monica, CA 90401", "kind": "bar"}, "bodega": {"name": "Bodega Wine Bar", "type": "Wine bar", "addr": "814 Broadway, Santa Monica", "win": [[420, 1380]], "hours": "7 AM to 11 PM", "lat": 34.0183156, "lon": -118.4893379, "q": "Bodega Wine Bar, 814 Broadway, Santa Monica, CA 90401", "kind": "bar"}, "jps": {"name": "JP's Sports Bar & Grill", "type": "Sports bar", "addr": "925 Wilshire Blvd, Santa Monica", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0237402, "lon": -118.4929531, "q": "JP's Sports Bar & Grill, 925 Wilshire Blvd, Santa Monica, CA 90401", "kind": "bar"}, "obriens": {"name": "O'Briens Irish Pub", "type": "Irish pub", "addr": "2226 Wilshire Blvd, Santa Monica", "win": [[300, 1530]], "hours": "5 AM to 1:30 AM", "lat": 34.0331676, "lon": -118.4806345, "q": "O'Briens Irish Pub, 2226 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "sonny": {"name": "Sonny McLean's", "type": "Irish pub", "addr": "2615 Wilshire Blvd, Santa Monica", "win": [[540, 1560]], "hours": "9 AM to 2 AM", "lat": 34.0364965, "lon": -118.4771634, "q": "Sonny McLean's Irish Pub, 2615 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "busbys": {"name": "Busby's West", "type": "Bar & grill", "addr": "3110 Santa Monica Blvd, Santa Monica", "win": [[540, 1530]], "hours": "9 AM to 1:30 AM", "lat": 34.0371116, "lon": -118.469102, "q": "Busby's West, 3110 Santa Monica Blvd, Santa Monica, CA 90404", "kind": "bar"}, "genlee": {"name": "General Lee's Bamboo Room", "type": "Bar", "addr": "12238 Santa Monica Blvd, West LA", "win": [[1020, 1560]], "hours": "5 PM to 2 AM", "lat": 34.0395721, "lon": -118.464931, "q": "General Lee's Bamboo Room, 12238 Santa Monica Blvd, Los Angeles, CA 90025", "kind": "bar"}, "tbird": {"name": "Thunderbird Bar", "type": "Bar", "addr": "12217 Wilshire Blvd, West LA", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0433896, "lon": -118.4688729, "q": "Thunderbird Bar, 12217 Wilshire Blvd, Los Angeles, CA 90025", "kind": "bar"}, "auld": {"name": "The Auld Fella", "type": "Irish pub", "addr": "11831 Wilshire Blvd, West LA", "win": [[720, 1500]], "hours": "12 PM to 1 AM", "lat": 34.0477316, "lon": -118.4634131, "q": "The Auld Fella - Wilshire, 11831 Wilshire Blvd, Los Angeles, CA 90025", "kind": "bar"}, "tacos": {"name": "Tacos Por Favor Bar & Grill", "type": "Bar & grill", "addr": "2947 Lincoln Blvd, Santa Monica", "win": [[540, 1320]], "hours": "9 AM to 10 PM", "lat": 34.0041011, "lon": -118.4722853, "q": "Tacos Por Favor Bar & Grill, 2947 Lincoln Blvd, Santa Monica, CA 90405", "kind": "bar"}, "local": {"name": "Local Kitchen and Wine Bar", "type": "Italian restaurant", "addr": "1736 Ocean Park Blvd, Santa Monica", "win": [[960, 1260]], "hours": "4 PM to 9 PM", "lat": 34.0129083, "lon": -118.4657028, "q": "Local Kitchen and Wine Bar, 1736 Ocean Park Blvd, Santa Monica, CA 90405", "kind": "bar"}, "dailypint": {"name": "The Daily Pint", "type": "Bar", "addr": "2310 Pico Blvd, Santa Monica", "win": [[840, 1560]], "hours": "2 PM to 2 AM", "lat": 34.0211285, "lon": -118.4661691, "q": "The Daily Pint, 2310 Pico Blvd, Santa Monica, CA 90405", "kind": "bar"}, "brixton": {"name": "The Brixton", "type": "Gastropub", "addr": "2827 Pico Blvd, Santa Monica", "win": [[570, 1380]], "hours": "9:30 AM to 11 PM", "lat": 34.0247733, "lon": -118.4598698, "q": "The Brixton, 2827 Pico Blvd, Santa Monica, CA 90404", "kind": "bar"}, "upperwest": {"name": "The Upper West", "type": "New American restaurant", "addr": "3321 Pico Blvd, Santa Monica", "win": [[990, 1290]], "hours": "4:30 PM to 9:30 PM", "lat": 34.027219, "lon": -118.4549933, "q": "The Upper West, 3321 Pico Blvd, Santa Monica, CA 90405", "kind": "bar"}, "tinys": {"name": "Tiny's Hi-Dive", "type": "Bar", "addr": "12012 W Pico Blvd, West LA", "win": [[690, 1560]], "hours": "11:30 AM to 2 AM", "lat": 34.0295954, "lon": -118.4494709, "q": "Tiny's Hi-Dive, 12012 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "sns": {"name": "Sorry Not Sorry", "type": "New American restaurant", "addr": "11520 W Pico Blvd, West LA", "win": [[720, 1440]], "hours": "12 PM to 12 AM", "lat": 34.0330807, "lon": -118.4425183, "q": "Sorry Not Sorry, 11520 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "dots": {"name": "dots space KARAOKE", "type": "Karaoke bar", "addr": "2130 Sawtelle Blvd #101, West LA", "win": [[840, 1680]], "hours": "2 PM to 4 AM", "lat": 34.0390561, "lon": -118.4414552, "q": "dots space KARAOKE, 2130 Sawtelle Blvd, Los Angeles, CA 90025", "kind": "bar"}, "sake": {"name": "Sawtelle Sake", "type": "Wine bar", "addr": "1836 Sawtelle Blvd, West LA", "win": [[1020, 1350]], "hours": "5 PM to 10:30 PM", "lat": 34.0431743, "lon": -118.4453174, "q": "Sawtelle Sake, 1836 Sawtelle Blvd, Los Angeles, CA 90025", "kind": "bar"}, "nickel": {"name": "The Nickel Mine", "type": "Sports bar", "addr": "11363 Santa Monica Blvd, West LA", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0459906, "lon": -118.4507505, "q": "The Nickel Mine, 11363 Santa Monica Blvd, Los Angeles, CA 90025", "kind": "bar"}, "benjamin": {"name": "Benjamin's place", "addr": "4th St & Idaho Ave, Santa Monica", "corner": "4th & Idaho", "lat": 34.0231973, "lon": -118.5030962, "q": "4th St & Idaho Ave, Santa Monica, CA 90403", "kind": "friend"}, "david": {"name": "David's place", "addr": "16th St & Washington Ave, Santa Monica", "corner": "16th & Washington", "lat": 34.0310633, "lon": -118.4901832, "q": "16th St & Washington Ave, Santa Monica, CA 90403", "kind": "friend"}}, "home": {"name": "Wally's place", "lat": 33.989, "lon": -118.455}, "end": {"name": "Max and Eric's place", "lat": 34.0455729, "lon": -118.4547451, "q": "Federal Ave & Ohio Ave, Los Angeles, CA 90025"}, "legs": {"HOME>socal": [14, "0.6 mi"], "socal>kassi": [14, "0.6 mi"], "HOME>vwest": [19, "0.8 mi"], "vwest>wurst": [11, "0.5 mi"], "wurst>chulita": [12, "0.5 mi"], "chulita>jamesons": [17, "0.8 mi"], "jamesons>sugarpalm": [17, "0.7 mi"], "sugarpalm>backyard": [6, "0.3 mi"], "backyard>courtside": [7, "0.3 mi"], "courtside>bodega": [12, "0.5 mi"], "bodega>jps": [14, "0.6 mi"], "obriens>sonny": [7, "0.3 mi"], "sonny>busbys": [14, "0.6 mi"], "busbys>genlee": [7, "0.3 mi"], "genlee>tbird": [9, "0.4 mi"], "tbird>auld": [11, "0.5 mi"], "auld>END": [18, "0.8 mi"], "jamesons>tacos": [18, "0.8 mi"], "tacos>local": [23, "1.0 mi"], "local>dailypint": [18, "0.8 mi"], "dailypint>brixton": [11, "0.5 mi"], "brixton>upperwest": [7, "0.3 mi"], "upperwest>tinys": [9, "0.4 mi"], "dots>sake": [9, "0.4 mi"], "sake>nickel": [10, "0.4 mi"], "nickel>END": [6, "0.3 mi"], "zinque>wurst": [8, "0.4 mi"], "kassi>vbc": [17, "0.8 mi"], "vbc>jamesons": [13, "0.6 mi"], "jps>obriens": [21, "0.9 mi"], "tinys>sns": [11, "0.5 mi"], "sns>dots": [15, "0.6 mi"], "courtside>benjamin": [22, "1.0 mi"], "benjamin>bodega": [25, "1.1 mi"], "bodega>benjamin": [26, "1.1 mi"], "benjamin>jps": [21, "0.9 mi"], "jps>david": [15, "0.6 mi"], "david>obriens": [17, "0.8 mi"], "jamesons>backyard": [22, "0.9 mi"], "backyard>bodega": [19, "0.8 mi"], "bodega>obriens": [34, "1.4 mi"], "obriens>busbys": [21, "0.9 mi"], "busbys>tbird": [12, "0.5 mi"], "tbird>END": [23, "1.0 mi"], "sugarpalm>courtside": [13, "0.6 mi"], "courtside>jps": [26, "1.1 mi"], "jps>sonny": [27, "1.2 mi"], "sonny>genlee": [21, "0.9 mi"], "genlee>auld": [19, "0.8 mi"], "socal>sidewalk": [18, "0.8 mi"], "sidewalk>vbc": [12, "0.6 mi"], "kassi>jamesons": [26, "1.2 mi"], "vwest>chulita": [23, "1.0 mi"], "zinque>chulita": [20, "0.9 mi"], "jamesons>local": [33, "1.4 mi"], "local>brixton": [28, "1.2 mi"], "brixton>tinys": [15, "0.7 mi"], "tinys>dots": [24, "1.0 mi"], "dots>nickel": [19, "0.8 mi"], "tacos>dailypint": [40, "1.7 mi"], "dailypint>upperwest": [17, "0.8 mi"], "upperwest>sns": [20, "0.8 mi"], "sns>sake": [22, "0.9 mi"], "sake>END": [16, "0.7 mi"], "jamesons>dailypint": [51, "2.2 mi"], "dailypint>tinys": [25, "1.1 mi"], "tinys>sake": [32, "1.4 mi"], "local>upperwest": [34, "1.5 mi"], "upperwest>dots": [33, "1.4 mi"], "dots>END": [25, "1.1 mi"], "tacos>brixton": [51, "2.2 mi"], "brixton>sns": [26, "1.1 mi"], "sns>nickel": [27, "1.2 mi"], "HOME>zinque": [23, "1.0 mi"]}, "slots": {"bw": [{"p": "socal"}, {"p": "kassi", "alt": ["sidewalk"]}, {"p": "vbc"}], "ln": [{"p": "vwest", "alt": ["zinque"]}, {"p": "wurst"}, {"p": "chulita"}], "main": [{"p": "jamesons"}], "wi": [{"p": "sugarpalm"}, {"p": "backyard"}, {"p": "courtside"}, {"p": "bodega"}, {"f": "benjamin"}, {"p": "jps"}, {"f": "david"}, {"p": "obriens"}, {"p": "sonny"}, {"p": "busbys"}, {"p": "genlee"}, {"p": "tbird"}, {"p": "auld"}], "pi": [{"p": "tacos"}, {"p": "local"}, {"p": "dailypint"}, {"p": "brixton"}, {"p": "upperwest"}, {"p": "tinys"}, {"p": "sns"}, {"p": "dots"}, {"p": "sake"}, {"p": "nickel"}]}, "routes": [{"id": "r1", "num": 1, "name": "Boardwalk to Wilshire", "start": "bw", "finish": "wi", "gmi": 8.8, "areas": "Abbot Kinney, the Venice boardwalk, Main St, Ocean Ave, downtown Santa Monica, Wilshire", "tip": "The Nickel Mine (11363 Santa Monica Blvd, open until 2 AM) is a 5 min walk from Max and Eric's place if you want one more."}, {"id": "r2", "num": 2, "name": "Boardwalk to Sawtelle", "start": "bw", "finish": "pi", "gmi": 8.4, "areas": "Abbot Kinney, the Venice boardwalk, Main St, Ocean Park, Pico Blvd, Sawtelle", "tip": ""}, {"id": "r3", "num": 3, "name": "Lincoln to Wilshire", "start": "ln", "finish": "wi", "gmi": 8.7, "areas": "Lincoln Blvd, Rose Ave, Main St, Ocean Ave, downtown Santa Monica, Wilshire", "tip": "The Nickel Mine (11363 Santa Monica Blvd, open until 2 AM) is a 5 min walk from Max and Eric's place if you want one more."}, {"id": "r4", "num": 4, "name": "Lincoln to Sawtelle", "start": "ln", "finish": "pi", "gmi": 8.4, "areas": "Lincoln Blvd, Rose Ave, Main St, Ocean Park, Pico Blvd, Sawtelle", "tip": ""}]};
+const SEGNAME = {bw:"Boardwalk start", ln:"Lincoln start", main:"Jameson's, where all four meet", wi:"Wilshire finish", pi:"Sawtelle finish"};
+const LONG = 20;
+
+function fmt(m){ m=((m%1440)+1440)%1440; let h=Math.floor(m/60); const mm=m%60; const ap=h>=12?"PM":"AM"; h=h%12; if(h===0) h=12; return h+":"+String(mm).padStart(2,"0")+" "+ap; }
+function hr(m){ return fmt(m).replace(":00",""); }
+function dur(m){ const h=Math.floor(m/60), r=m%60; return (h?h+" hr ":"")+r+" min"; }
+function quick(m){ return m>=10 ? m-2 : (m>=1 ? m-1 : 0); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function leg(a,b){ return D.legs[a+">"+b]; }
+function miOf(d){ return parseFloat(d)*(d.endsWith("ft")?1/5280:1); }
+function nameOf(id){ return id==="END" ? D.end.name : id==="HOME" ? D.home.name : D.places[id].name; }
+function isOpen(p,t,stay){ return p.win.some(([o,c])=>o<=t && t+stay<=c); }
+function whyClosed(p,t,stay){
+  const cur=p.win.find(([o,c])=>o<=t && t<c);
+  if(cur) return "closes at "+hr(cur[1]);
+  const later=p.win.find(([o])=>o>t), earlier=p.win.find(([,c])=>c<=t);
+  if(later) return (earlier ? "is closed until " : "opens at ")+hr(later[0]);
+  return "is closed by then";
+}
+function slotsFor(r){
+  const out=[];
+  D.slots[r.start].forEach(s=>out.push({...s,seg:r.start}));
+  D.slots.main.forEach(s=>out.push({...s,seg:"main"}));
+  D.slots[r.finish].forEach(s=>out.push({...s,seg:r.finish}));
+  return out;
+}
+
+/* Planner: walks the slots in order. Each bar slot can use its first pick, a nearby backup, or be skipped.
+   Score, lowest wins: friend stops missed, bars closed on arrival, walks over 20 min, fewer bars, backups used, total walking. */
+function plan(r,start,stay,friends){
+  const slots=slotsFor(r), memo=new Map();
+  const better=(a,b)=>{ if(!b) return true; for(let i=0;i<a.length;i++){ if(a[i]!==b[i]) return a[i]<b[i]; } return false; };
+  function rec(i,prev,t){
+    const key=i+"|"+prev+"|"+t;
+    if(memo.has(key)) return memo.get(key);
+    let best=null;
+    if(i===slots.length){
+      const l=leg(prev,"END");
+      if(l){ const w=quick(l[0]); best={score:[0,0,w>LONG?1:0,0,0,w],steps:[{id:"END",from:prev,l,w,arrive:t+w,seg:slots[slots.length-1].seg}]}; }
+      memo.set(key,best); return best;
+    }
+    const s=slots[i];
+    const sub0=rec(i+1,prev,t);
+    if(sub0){
+      const missed = s.f && friends[s.f] ? 1 : 0;
+      const sc=sub0.score.slice(); sc[0]+=missed;
+      best={score:sc,steps: s.p ? [{skip:true,id:s.p,from:prev,t,seg:s.seg},...sub0.steps] : sub0.steps};
+    }
+    const cands = s.f ? (friends[s.f] ? [s.f] : []) : [s.p,...(s.alt||[])];
+    for(const c of cands){
+      const l=leg(prev,c); if(!l) continue;
+      const w=quick(l[0]), arr=t+w, p=D.places[c];
+      let closed=0,bar=0,swap=0;
+      if(p.kind==="bar"){ if(isOpen(p,arr,stay)) bar=1; else closed=1; swap = c!==s.p ? 1 : 0; }
+      const sub=rec(i+1,c,arr+stay); if(!sub) continue;
+      const sc=sub.score.slice(); sc[1]+=closed; sc[2]+=(w>LONG?1:0); sc[3]-=bar; sc[4]+=swap; sc[5]+=w;
+      if(better(sc,best&&best.score)) best={score:sc,steps:[{id:c,from:prev,l,w,arrive:arr,closed:!!closed,swapFor:swap?s.p:null,seg:s.seg,depart:arr+stay,kind:p.kind},...sub.steps]};
+    }
+    memo.set(key,best); return best;
+  }
+  const res=rec(0,"HOME",start);
+  const steps=res.steps;
+  // default path (first picks, no friends) for the distance check against Google's totals
+  const def=["HOME",...slotsFor(r).filter(s=>s.p).map(s=>s.p),"END"];
+  const defKeys=new Set(def.slice(1).map((b,i)=>def[i]+">"+b));
+  const visits=steps.filter(x=>!x.skip);
+  const pathKeys=new Set(visits.map(x=>x.from+">"+x.id));
+  let mi=r.gmi;
+  pathKeys.forEach(k=>{ if(!defKeys.has(k)) mi+=miOf(D.legs[k][1]); });
+  defKeys.forEach(k=>{ if(!pathKeys.has(k)) mi-=miOf(D.legs[k][1]); });
+  let walk=0,maxW=0,maxFrom="",maxTo="";
+  visits.forEach(x=>{ walk+=x.w; if(x.w>maxW){ maxW=x.w; maxFrom=nameOf(x.from); maxTo=nameOf(x.id); } });
+  const bars=visits.filter(x=>x.kind==="bar"&&!x.closed).length;
+  const closed=visits.filter(x=>x.closed).length;
+  const friendIds=visits.filter(x=>x.kind==="friend").map(x=>x.id);
+  const longs=visits.filter(x=>x.w>LONG).length;
+  return {steps,visits,mi,walk,maxW,maxFrom,maxTo,bars,closed,friendIds,longs,end:visits[visits.length-1].arrive,missed:res.score[0]};
+}
+
+/* Why a bar was skipped or swapped. Returns the reason clause only, for the card and the stop list. */
+function skipWhy(st,steps,idx,stay){
+  const p=D.places[st.id], l=leg(st.from,st.id);
+  const t = st.t + (l ? quick(l[0]) : 0);
+  if(!isOpen(p,t,stay)) return {closed:true, text:whyClosed(p,t,stay)};
+  const nb=[steps[idx-1],steps[idx+1]].find(x=>x&&!x.skip&&x.kind==="friend");
+  return {closed:false, text: nb ? "to make room for "+D.places[nb.id].name : "to keep the walks around it at 20 min or less"};
+}
+function skipReason(st,steps,idx,stay){
+  const w=skipWhy(st,steps,idx,stay);
+  return w.closed ? "Skipped: it "+w.text+"." : "Left out "+w.text+".";
+}
+function skipShort(st,steps,idx,stay){
+  const w=skipWhy(st,steps,idx,stay), n=D.places[st.id].name;
+  return w.closed ? "Skips "+n+", which "+w.text : "Skips "+n+" "+w.text;
+}
+function swapWhy(st,stay){
+  const p=D.places[st.swapFor], l=leg(st.from,st.swapFor);
+  const t = l ? (st.arrive - st.w + quick(l[0])) : st.arrive;
+  return isOpen(p,t,stay) ? "so the later stops line up with their hours" : "which "+whyClosed(p,t,stay);
+}
+function swapReason(st,stay){ const w=swapWhy(st,stay); return "Fills in for "+D.places[st.swapFor].name+(w.startsWith("which")?", ":" ")+w+"."; }
+function swapShort(st,stay){ const w=swapWhy(st,stay); return D.places[st.id].name+" fills in for "+D.places[st.swapFor].name+(w.startsWith("which")?", ":" ")+w; }
+
+function gq(id){ return id==="END" ? D.end.q : D.places[id].q; }
+function gurl(ids){ return "https://www.google.com/maps/dir/"+ids.map(id=>encodeURIComponent(gq(id)).replace(/%20/g,"+").replace(/%2C/g,",")).join("/")+"/data=!4m2!4m1!3e2"; }
+function links(visits){
+  const ids=visits.map(x=>x.id), out=[];
+  for(let i=0;i<ids.length-1;i+=9){ out.push(ids.slice(i,i+10)); if(i+10>=ids.length) break; }
+  const lab=id=>id==="END"?D.end.name:D.places[id].name;
+  return out.map((c,k)=>({label:(out.length>1?"Part "+(k+1)+": ":"")+lab(c[0])+" to "+lab(c[c.length-1]),url:gurl(c)}));
+}
+
+function build(){
+  const cards=[], dets=[];
+  for(const r of D.routes){
+    cards.push(
+      '<article class="card" id="card-'+r.id+'" style="--sc:var(--'+r.start+');--fc:var(--'+r.finish+')">'+
+      '<div class="cardtop"><p class="num">Route '+r.num+'</p><span id="badge-'+r.id+'"></span></div><h3>'+esc(r.name)+'</h3>'+
+      '<div class="line2" aria-hidden="true"><span></span><span></span></div>'+
+      '<div id="stats-'+r.id+'"></div>'+
+      '<p class="areas">'+esc(r.areas)+'</p>'+
+      '<a class="go" href="#'+r.id+'" data-open="'+r.id+'">See every stop</a>'+
+      '</article>');
+    dets.push(
+      '<details id="'+r.id+'" style="--fc:var(--'+r.finish+')">'+
+      '<summary><h3>Route '+r.num+': '+esc(r.name)+'</h3><span class="meta" id="meta-'+r.id+'"></span></summary>'+
+      '<div class="inner">'+
+        '<div><p style="font-weight:700;margin-bottom:6px">Walking directions in Google Maps</p><ul class="links" id="links-'+r.id+'"></ul></div>'+
+        '<div class="callout" id="call-'+r.id+'"></div>'+
+        '<ol class="strip" id="strip-'+r.id+'"></ol>'+
+      '</div></details>');
+  }
+  document.getElementById("cards").innerHTML=cards.join("");
+  document.getElementById("details").innerHTML=dets.join("");
+  document.querySelectorAll("a[data-open]").forEach(a=>a.addEventListener("click",()=>{ const d=document.getElementById(a.dataset.open); if(d) d.open=true; }));
+}
+
+function readInputs(){
+  const v=document.getElementById("leave").value||"13:00";
+  let [hh,mm]=v.split(":").map(Number); if(isNaN(hh)) hh=13; if(isNaN(mm)) mm=0;
+  let stay=parseInt(document.getElementById("stay").value,10); if(isNaN(stay)||stay<0) stay=20; stay=Math.min(stay,180);
+  return {start:hh*60+mm, stay, friends:{benjamin:document.getElementById("f-benjamin").checked, david:document.getElementById("f-david").checked}};
+}
+
+function render(){
+  const {start,stay,friends}=readInputs();
+  const R=D.routes.map(r=>({r,c:plan(r,start,stay,friends)}));
+  const rank=x=>[x.c.closed,-x.c.friendIds.length,-x.c.bars,x.c.longs];
+  const cmp=(a,b)=>{ for(let i=0;i<a.length;i++){ if(a[i]!==b[i]) return a[i]-b[i]; } return 0; };
+  const bestRank=R.map(rank).reduce((a,b)=>cmp(a,b)<=0?a:b);
+  for(const {r,c} of R){
+    const isBest=cmp(rank({c}),bestRank)===0;
+    document.getElementById("card-"+r.id).classList.toggle("best",isBest);
+    document.getElementById("badge-"+r.id).innerHTML=isBest?'<span class="badge">Best pick for a '+fmt(start)+' start</span>':'';
+    const long=c.maxW>LONG;
+    const ch=[];
+    c.friendIds.forEach(id=>ch.push("Stops at "+esc(D.places[id].name)));
+    if(r.finish==="wi") Object.keys(friends).filter(f=>friends[f]&&!c.friendIds.includes(f)).forEach(f=>ch.push("Can't fit "+esc(D.places[f].name)+" in at this time"));
+    c.steps.forEach((x,idx)=>{
+      if(x.skip) ch.push(esc(skipShort(x,c.steps,idx,stay)));
+      else if(x.swapFor) ch.push(esc(swapShort(x,stay)));
+    });
+    document.getElementById("stats-"+r.id).innerHTML=
+      '<dl class="stats">'+
+        '<dt>Bars</dt><dd>'+c.bars+'</dd>'+
+        '<dt>Walking</dt><dd>'+dur(c.walk)+'</dd>'+
+        '<dt>Distance</dt><dd>'+c.mi.toFixed(1)+' mi</dd>'+
+        '<dt>Longest walk</dt><dd>'+(long?'<span class="pill">'+c.maxW+' min</span>':c.maxW+' min')+'</dd>'+
+        '<dt>At Max and Eric\'s</dt><dd>'+fmt(c.end)+'</dd>'+
+      '</dl>'+
+      '<p class="areas" style="margin-top:10px">'+(c.closed? '<span class="pill">'+c.closed+(c.closed>1?' bars':' bar')+' closed when you get there</span>' : '<span class="ok">Every bar open when you get there</span>')+'</p>'+
+      (ch.length?'<ul class="changes">'+ch.map(x=>'<li>'+x+'</li>').join("")+'</ul>':'');
+    document.getElementById("meta-"+r.id).textContent='Leave '+fmt(start)+' · '+c.bars+' bars · '+dur(c.walk)+' walking · at Max and Eric\'s '+fmt(c.end);
+    const L=links(c.visits);
+    document.getElementById("links-"+r.id).innerHTML='<li>From Wally\'s place, walk to '+esc(nameOf(c.visits[0].id))+' first, then:</li>'+L.map(l=>'<li><a href="'+l.url+'" target="_blank" rel="noopener">'+esc(l.label)+'</a></li>').join("");
+    document.getElementById("call-"+r.id).innerHTML='<p>Longest walk: '+esc(c.maxFrom)+' to '+esc(c.maxTo)+', '+c.maxW+' min.</p>'+(r.tip?'<p>'+esc(r.tip)+'</p>':'');
+    let li='<li style="--seg:var(--'+r.start+')"><div class="time">'+fmt(start)+'</div><div class="rail"><span class="dot term"></span></div><div class="stopbody"><div class="sname">Leave Wally\'s place</div><div class="sdesc">The start</div></div></li>';
+    c.steps.forEach((st,idx)=>{
+      if(st.skip){
+        li+='<li class="skip" style="--seg:var(--'+st.seg+')"><div class="time"></div><div class="rail"></div><div class="stopbody"><div class="sname">'+esc(D.places[st.id].name)+'</div><div class="sdesc">'+esc(skipReason(st,c.steps,idx,stay))+'</div></div></li>';
+        return;
+      }
+      const w='<div class="walk'+(st.w>LONG?' long':'')+'">'+st.w+' min walk ('+esc(st.l[1])+')</div>';
+      if(st.id==="END"){
+        li+='<li style="--seg:var(--'+st.seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot term"></span></div><div class="stopbody">'+w+'<div class="sname">Max and Eric\'s place</div><div class="sdesc">The finish</div></div></li>';
+      } else if(st.kind==="friend"){
+        const p=D.places[st.id];
+        li+='<li style="--seg:var(--'+st.seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot fr"></span></div><div class="stopbody">'+w+'<div class="sname">'+esc(p.name)+' <span class="pill soft">Friend\'s place</span></div><div class="sdesc">'+esc(p.addr)+'</div></div></li>';
+      } else {
+        const p=D.places[st.id];
+        const tag = st.closed ? ' <span class="pill">Closed then</span>' : st.swapFor ? ' <span class="pill soft">Backup</span>' : '';
+        li+='<li style="--seg:var(--'+st.seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot"></span></div><div class="stopbody">'+w+
+          '<div class="sname">'+esc(p.name)+tag+'</div>'+
+          (st.swapFor?'<div class="sdesc">'+esc(swapReason(st,stay))+'</div>':'')+
+          '<div class="sdesc">'+esc(p.type)+' · '+esc(p.addr)+'</div><div class="sdesc">Saturday '+esc(p.hours)+'</div></div></li>';
+      }
+    });
+    document.getElementById("strip-"+r.id).innerHTML=li;
+  }
+  drawMap(R,friends);
+}
+
+let PROJ=null;
+function proj(){
+  if(PROJ) return PROJ;
+  const pts=[[D.home.lat,D.home.lon],[D.end.lat,D.end.lon],...Object.values(D.places).map(p=>[p.lat,p.lon])];
+  const lats=pts.map(p=>p[0]), lons=pts.map(p=>p[1]);
+  const latMax=Math.max(...lats), latMin=Math.min(...lats), lonMin=Math.min(...lons), lonMax=Math.max(...lons);
+  const cosl=Math.cos(34.017*Math.PI/180), W=600, M=48, k=(W-2*M)/((lonMax-lonMin)*cosl);
+  const H=Math.round((latMax-latMin)*k+2*M)+20;
+  const P=id=>{ const p= id==="HOME"?D.home: id==="END"?D.end: D.places[id]; return [M+(p.lon-lonMin)*cosl*k, M+(latMax-p.lat)*k]; };
+  PROJ={W,H,k,P}; return PROJ;
+}
+function drawMap(R,friends){
+  const {W,H,k,P}=proj();
+  const svg=document.getElementById("map");
+  svg.setAttribute("viewBox","0 0 "+W+" "+H);
+  const xy=id=>P(id).map(v=>v.toFixed(1)).join(",");
+  const finLines=[], startLines=[];
+  let dots="";
+  for(const {r,c} of R){
+    const st=["HOME"], v=c.visits;
+    let i=0;
+    while(i<v.length && v[i].seg===r.start){ st.push(v[i].id); i++; }
+    if(i<v.length) st.push(v[i].id);
+    const fl=[st[st.length-1]]; for(let j=i+1;j<v.length;j++) fl.push(v[j].id);
+    finLines.push('<polyline class="seg '+r.finish+'" points="'+fl.map(xy).join(" ")+'"/>');
+    startLines.push('<polyline class="seg '+r.start+'" points="'+st.map(xy).join(" ")+'"/>');
+  }
+  const lines=finLines.join("")+startLines.join("");
+  const drawn=new Set();
+  for(const {r,c} of R){
+    for(const x of c.visits){
+      if(x.id==="END"||x.kind==="friend"||drawn.has(x.id)) continue; drawn.add(x.id);
+      const [px,py]=P(x.id);
+      dots+='<circle class="stop '+(x.seg==="main"?"main":x.seg)+'" cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="4.5"><title>'+esc(D.places[x.id].name)+'</title></circle>';
+    }
+  }
+  const lab=(x,y,t,anchor,cls)=>'<text class="lbl'+(cls?' '+cls:'')+'" x="'+(+x).toFixed(1)+'" y="'+(+y).toFixed(1)+'" text-anchor="'+anchor+'">'+t+'</text>';
+  let fr="";
+  const short={benjamin:"Benjamin's",david:"David's"};
+  for(const [id,dx,dy,anchor] of [["benjamin",0,-14,"middle"],["david",-12,0,"end"]]){
+    const on=!!friends[id], [px,py]=P(id), s=6;
+    fr+='<rect class="friend'+(on?'':' off')+'" x="'+(px-s).toFixed(1)+'" y="'+(py-s).toFixed(1)+'" width="'+(2*s)+'" height="'+(2*s)+'" rx="2" transform="rotate(45 '+px.toFixed(1)+' '+py.toFixed(1)+')"><title>'+esc(D.places[id].name)+'</title></rect>';
+    if(on) fr+=lab(px+dx,py+dy,short[id],anchor,'fr');
+    else if(id==="benjamin") fr+=lab(px+dx,py+dy-14,short[id],anchor,'fr off')+lab(px+dx,py+dy,"optional",anchor,'fr off');
+    else fr+=lab(px+dx,py+dy,short[id],anchor,'fr off')+lab(px+dx,py+dy+14,"optional",anchor,'fr off');
+  }
+  const [hx,hy]=P("HOME"), [ex,ey]=P("END");
+  let s=lines+dots+fr;
+  s+='<circle class="term" cx="'+hx.toFixed(1)+'" cy="'+hy.toFixed(1)+'" r="8"><title>Wally\'s place</title></circle>';
+  s+='<circle class="term" cx="'+ex.toFixed(1)+'" cy="'+ey.toFixed(1)+'" r="8"><title>Max and Eric\'s place</title></circle>';
+  s+=lab(hx+14,hy+22,"Wally's place","start","strong");
+  s+=lab(ex+12,ey-12,"Max and Eric's place","start","strong");
+  const L=[["vbc",-14,30,"Venice boardwalk","end"],["socal",-6,38,"Abbot Kinney","middle"],["vwest",14,-10,"Lincoln Blvd","start"],["jamesons",-14,40,"Main St","end"],["sugarpalm",14,0,"Ocean Ave","start"],["bodega",14,4,"Downtown Santa Monica","start"],["obriens",14,22,"Wilshire Blvd","start"],["dailypint",14,8,"Pico Blvd","start"],["dots",-46,16,"Sawtelle","end"]];
+  for(const [id,dx,dy,t,a] of L){ const [x,y]=P(id); s+=lab(x+dx,y+dy,t,a,""); }
+  const mile=1.609344/111.2*k;
+  s+='<line class="scale" x1="40" y1="'+(H-18)+'" x2="'+(40+mile).toFixed(1)+'" y2="'+(H-18)+'"/><line class="scale" x1="40" y1="'+(H-24)+'" x2="40" y2="'+(H-12)+'"/><line class="scale" x1="'+(40+mile).toFixed(1)+'" y1="'+(H-24)+'" x2="'+(40+mile).toFixed(1)+'" y2="'+(H-12)+'"/>';
+  s+=lab(40+mile/2,H-28,"1 mile","middle","");
+  s+='<path class="north" d="M36 26 L44 46 L36 41 L28 46 Z"/>'+lab(36,62,"N","middle","strong");
+  svg.innerHTML=s;
+}
+
+document.getElementById("legend").innerHTML=["bw","ln","main","wi","pi"].map(k=>'<span><i style="--c:var(--'+k+')"></i>'+SEGNAME[k]+'</span>').join("")+'<span><i class="dia"></i>Friend\'s place</span>';
+["leave","stay"].forEach(id=>document.getElementById(id).addEventListener("input",render));
+["f-benjamin","f-david"].forEach(id=>document.getElementById(id).addEventListener("change",render));
+build();
+render();
+</script>
+
+</body>
+</html>
