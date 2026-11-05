@@ -12,7 +12,7 @@
 /* Layout: a transit style line map. Controls up top, four route cards, one schematic map, then each route as a stop by stop strip. */
 :root{
   --bg:#eef2f5; --surface:#ffffff; --ink:#102030; --muted:#566577; --line:#d3dbe3; --focus:#0a64a8;
-  --bw:#1677c9; --ln:#23885a; --main:#5d6b7a; --wi:#c96a12; --pi:#a2378a;
+  --bw:#1677c9; --ln:#23885a; --main:#5d6b7a; --wi:#c96a12; --pi:#a2378a; --ma:#0f7d86;
   --flag:#b4231a; --flag-bg:#fde8e6; --best-bg:#fff1c2; --best-ink:#6b4e00; --on-focus:#ffffff;
   --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -20,13 +20,13 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0d151d; --surface:#14202b; --ink:#e5edf4; --muted:#9db0c2; --line:#263645; --focus:#6cb6f0;
-    --bw:#4ea3ea; --ln:#49bf85; --main:#8b98a6; --wi:#f0a24f; --pi:#d46cbd;
+    --bw:#4ea3ea; --ln:#49bf85; --main:#8b98a6; --wi:#f0a24f; --pi:#d46cbd; --ma:#3fc1cb;
     --flag:#ff8a80; --flag-bg:#3a1a18; --best-bg:#3a3113; --best-ink:#f3cf6b; --on-focus:#0d151d; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0d151d; --surface:#14202b; --ink:#e5edf4; --muted:#9db0c2; --line:#263645; --focus:#6cb6f0;
-  --bw:#4ea3ea; --ln:#49bf85; --main:#8b98a6; --wi:#f0a24f; --pi:#d46cbd;
+  --bw:#4ea3ea; --ln:#49bf85; --main:#8b98a6; --wi:#f0a24f; --pi:#d46cbd; --ma:#3fc1cb;
   --flag:#ff8a80; --flag-bg:#3a1a18; --best-bg:#3a3113; --best-ink:#f3cf6b; --on-focus:#0d151d; color-scheme:dark;
 }
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
@@ -187,6 +187,19 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog form{display:grid;gap:12px}
 dialog h3{font-size:1.4rem}
 .novote .vote-ui{display:none}
+/* Start and end pickers, marina color */
+.field select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0;width:auto;max-width:100%}
+.field.swapf{align-self:end;padding-bottom:9px}
+.custombar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}
+.legend i.ma{background:var(--ma)}
+svg .seg.ma{stroke:var(--ma)} svg .stop.ma{stroke:var(--ma)}
+svg .endring{fill:none;stroke:var(--ink);stroke-width:2.5}
+.empty{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+label.check input:disabled + *{opacity:.5}
+label.check.dis{opacity:.55;cursor:default}
+
+[hidden]{display:none!important}
+svg .lbl{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
 </style>
 </head>
 <body>
@@ -196,20 +209,23 @@ dialog h3{font-size:1.4rem}
   <header class="top">
     <p class="eyebrow">Saturday · Venice to West LA on foot</p>
     <h1>Saturday Westside Crawl</h1>
-    <p class="lede">Four ways to walk from Wally's place in Venice to Max and Eric's place in West LA. Leaving at 1 PM, each route has 14 or 15 bars on the way, and you can add or drop bars on any of them. Each route is one start plus one finish: the Boardwalk or Lincoln start, then the Wilshire or Sawtelle finish, meeting at Jameson's on Main St. Most walks between bars run 5 to 20 min, and every route adjusts to when you leave and how long you stay at each bar.</p>
+    <p class="lede">Four ways to walk from Wally's place in Venice to Max and Eric's place in West LA. Leaving at 1 PM, each route has 14 or 15 bars on the way, and you can add or drop bars on any of them. Each route is one start plus one finish: the Boardwalk or Lincoln start, then the Wilshire or Sawtelle finish, meeting at Jameson's on Main St. Most walks between bars run 5 to 20 min, and every route adjusts to when you leave and how long you stay at each bar. You can also start and end anywhere else on the list, in either direction.</p>
     <div class="panel">
-      <p class="nojs-only nojs-note">This is the plan for leaving Wally's place at 1:00 PM, with 20 min at each bar and no friend stops. The leave time, bar time and friend switches only work when the page is opened in a web browser.</p>
+      <p class="nojs-only nojs-note">The routes and the map only show when this page is opened in a regular web browser.</p>
       <div class="controls js-only">
-        <div class="field"><label for="leave">Leave Wally's at</label><input id="leave" type="time" value="13:00" step="300"></div>
+        <div class="field"><label for="from">Start</label><select id="from"></select></div>
+        <div class="field swapf"><button type="button" class="linkbtn" id="swap">Swap start and end</button></div>
+        <div class="field"><label for="to">End</label><select id="to"></select></div>
+      </div>
+      <div class="controls js-only">
+        <div class="field"><label for="leave" id="leave-l">Leave Wally's at</label><input id="leave" type="time" value="13:00" step="300"></div>
         <div class="field"><label for="stay">Minutes at each bar</label><input id="stay" type="number" value="20" min="5" max="90" step="5"></div>
-        <fieldset class="field"><legend>Friend stops on routes 1 and 3</legend>
-          <div class="checks">
-            <label class="check"><input type="checkbox" id="f-benjamin">Benjamin's place <span>4th &amp; Idaho</span></label>
-            <label class="check"><input type="checkbox" id="f-david">David's place <span>16th &amp; Washington</span></label>
-          </div>
+        <fieldset class="field"><legend>Friend stops</legend>
+          <div class="checks" id="fchecks"></div>
         </fieldset>
       </div>
-      <p class="hint js-only">Change any of these and all four routes update. If a bar would be closed when you get there, the route swaps in a nearby spot that's open or skips it, and anything it can't fix shows in red. A friend's place gets the same time as a bar. The best pick includes any friend stops you switched on, then has the most bars, then the fewest walks over 20 min.</p>
+      <p class="hint js-only">Pick any home or bar as the start and the end, and the routes fill in the bars between them, either direction. Change anything and the routes update. If a bar would be closed when you get there, the route swaps in a nearby spot that's open or skips it, and anything it can't fix shows in red. A friend's place gets the same time as a bar and goes on any route that passes it. The best pick includes the friend stops you switched on, then has the most bars, then the fewest walks over 20 min.</p>
+      <p class="custombar js-only" id="custombar" hidden><span id="custommsg"></span><button type="button" class="linkbtn" id="backdef">Back to Wally's place to Max and Eric's place</button></p>
     </div>
   </header>
 
@@ -220,9 +236,9 @@ dialog h3{font-size:1.4rem}
     <div class="vbox">
       <p class="hint">Votes and comments show up live for everyone who opens this page. Type your first name once and it stays saved on this phone or computer.</p>
       <div class="namebar" id="namebar"></div>
-      <div class="q"><h3>When should we leave Wally's?</h3><div class="chips" id="vtime"></div><p class="vnames" id="vtime-names"></p></div>
-      <div class="q"><h3>Stop at friends' places on routes 1 and 3?</h3><div class="q" id="vfriends"></div></div>
-      <div class="q"><p class="hint">Vote for a route on its card above, and vote each bar up or down under Every stop.</p>
+      <div class="q"><h3>When should we leave?</h3><div class="chips" id="vtime"></div><p class="vnames" id="vtime-names"></p></div>
+      <div class="q"><h3>Stop at friends' places?</h3><div class="q" id="vfriends"></div></div>
+      <div class="q"><p class="hint">Vote for one of the four routes from Wally's place to Max and Eric's place on its card above, and vote each bar up or down under Every stop.</p>
         <div class="namebar"><button class="btn ghost" id="usevotes" type="button" disabled>Use the group's picks</button><span class="vnames" id="usevotes-note">Sets the leave time and friend stops above to whatever has the most votes.</span></div>
       </div>
     </div>
@@ -231,7 +247,7 @@ dialog h3{font-size:1.4rem}
   <section class="mapsec" aria-labelledby="maph">
     <h2 id="maph">All four on one map</h2>
     <div class="legend" id="legend"></div>
-    <div class="mapbox"><svg id="map" role="img" aria-label="Schematic map of the four crawl routes from Wally's place to Max and Eric's place"></svg></div>
+    <div class="mapbox"><svg id="map" role="img" aria-label="Schematic map of the crawl routes"></svg></div>
     <p class="note">Straight lines join the stops in order, so this shows the shape of each route, not the exact streets. North is up. The Google Maps links in each route give the real walking directions.</p>
   </section>
 
@@ -261,14 +277,18 @@ dialog h3{font-size:1.4rem}
 </dialog>
 
 <script>
-const D = {"places": {"socal": {"name": "SoCal Vibes Co.", "type": "Bar", "addr": "1522 Abbot Kinney Blvd, Venice", "win": [[600, 1440]], "hours": "10 AM to 12 AM", "lat": 33.9898736, "lon": -118.4641958, "q": "SoCal Vibes Co. Abbot Kinney, 1522 Abbot Kinney Blvd, Venice, CA 90291", "kind": "bar"}, "kassi": {"name": "Kassi", "type": "Bar", "addr": "1697 Pacific Ave, Venice", "win": [[660, 1440]], "hours": "11 AM to 12 AM", "lat": 33.9869585, "lon": -118.4725003, "q": "Kassi, 1697 Pacific Ave, Venice, CA 90291", "kind": "bar"}, "sidewalk": {"name": "The Sidewalk Cafe", "type": "American restaurant", "addr": "1401 Ocean Front Walk, Venice", "win": [[480, 1320]], "hours": "8 AM to 10 PM", "lat": 33.9879633, "lon": -118.4744814, "q": "The Sidewalk Cafe, 1401 Ocean Front Walk, Venice, CA 90291", "kind": "bar"}, "vbc": {"name": "Venice Beach Club", "type": "Southern Italian restaurant", "addr": "2 Rose Ave, Venice", "win": [[660, 1320]], "hours": "11 AM to 10 PM", "lat": 33.9945646, "lon": -118.4803193, "q": "Venice Beach Club, 2 Rose Ave, Venice, CA 90291", "kind": "bar"}, "vwest": {"name": "The Venice West", "type": "Live music venue", "addr": "1717 Lincoln Blvd, Venice", "win": [[660, 900], [1080, 1560]], "hours": "11 AM to 3 PM, 6 PM to 2 AM", "lat": 33.9963379, "lon": -118.4578322, "q": "The Venice West, 1717 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "zinque": {"name": "Zinqué", "type": "French restaurant", "addr": "1440 Lincoln Blvd, Venice", "win": [[420, 1380]], "hours": "7 AM to 11 PM", "lat": 33.9978505, "lon": -118.4599806, "q": "Zinqué Venice, 1440 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "wurst": {"name": "Wurstküche", "type": "German restaurant", "addr": "625 Lincoln Blvd, Venice", "win": [[690, 1380]], "hours": "11:30 AM to 11 PM", "lat": 33.9997898, "lon": -118.4649875, "q": "Wurstküche Restaurant Venice Beach, 625 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "chulita": {"name": "Chulita", "type": "Mexican restaurant", "addr": "533 Rose Ave, Venice", "win": [[540, 1380]], "hours": "9 AM to 11 PM", "lat": 33.99886, "lon": -118.47311, "q": "Chulita, 533 Rose Ave, Venice, CA 90291", "kind": "bar"}, "jamesons": {"name": "Jameson's Pub", "type": "Irish pub", "addr": "2702 Main St, Santa Monica", "win": [[540, 1560]], "hours": "9 AM to 2 AM", "lat": 34.0007499, "lon": -118.4825824, "q": "Jameson’s Pub, 2702 Main St, Santa Monica, CA 90405", "kind": "bar"}, "sugarpalm": {"name": "Sugar Palm", "type": "Restaurant", "addr": "1819 Ocean Ave, Santa Monica", "win": [[420, 1320]], "hours": "7 AM to 10 PM", "lat": 34.0080458, "lon": -118.4903651, "q": "Sugar Palm Santa Monica, 1819 Ocean Ave, Santa Monica, CA 90401", "kind": "bar"}, "backyard": {"name": "The Backyard", "type": "Cocktail bar", "addr": "1657 Ocean Ave, Santa Monica", "win": [[600, 1380]], "hours": "10 AM to 11 PM", "lat": 34.010459, "lon": -118.4932664, "q": "The Backyard, 1657 Ocean Ave, Santa Monica, CA 90401", "kind": "bar"}, "courtside": {"name": "The Courtside Lounge", "type": "Restaurant", "addr": "123 Broadway, Santa Monica", "win": [[720, 1380]], "hours": "12 PM to 11 PM", "lat": 34.0133869, "lon": -118.4959401, "q": "The Courtside Lounge, 123 Broadway, Santa Monica, CA 90401", "kind": "bar"}, "bodega": {"name": "Bodega Wine Bar", "type": "Wine bar", "addr": "814 Broadway, Santa Monica", "win": [[420, 1380]], "hours": "7 AM to 11 PM", "lat": 34.0183156, "lon": -118.4893379, "q": "Bodega Wine Bar, 814 Broadway, Santa Monica, CA 90401", "kind": "bar"}, "jps": {"name": "JP's Sports Bar & Grill", "type": "Sports bar", "addr": "925 Wilshire Blvd, Santa Monica", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0237402, "lon": -118.4929531, "q": "JP's Sports Bar & Grill, 925 Wilshire Blvd, Santa Monica, CA 90401", "kind": "bar"}, "obriens": {"name": "O'Briens Irish Pub", "type": "Irish pub", "addr": "2226 Wilshire Blvd, Santa Monica", "win": [[300, 1530]], "hours": "5 AM to 1:30 AM", "lat": 34.0331676, "lon": -118.4806345, "q": "O'Briens Irish Pub, 2226 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "sonny": {"name": "Sonny McLean's", "type": "Irish pub", "addr": "2615 Wilshire Blvd, Santa Monica", "win": [[540, 1560]], "hours": "9 AM to 2 AM", "lat": 34.0364965, "lon": -118.4771634, "q": "Sonny McLean's Irish Pub, 2615 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "busbys": {"name": "Busby's West", "type": "Bar & grill", "addr": "3110 Santa Monica Blvd, Santa Monica", "win": [[540, 1530]], "hours": "9 AM to 1:30 AM", "lat": 34.0371116, "lon": -118.469102, "q": "Busby's West, 3110 Santa Monica Blvd, Santa Monica, CA 90404", "kind": "bar"}, "genlee": {"name": "General Lee's Bamboo Room", "type": "Bar", "addr": "12238 Santa Monica Blvd, West LA", "win": [[1020, 1560]], "hours": "5 PM to 2 AM", "lat": 34.0395721, "lon": -118.464931, "q": "General Lee's Bamboo Room, 12238 Santa Monica Blvd, Los Angeles, CA 90025", "kind": "bar"}, "tbird": {"name": "Thunderbird Bar", "type": "Bar", "addr": "12217 Wilshire Blvd, West LA", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0433896, "lon": -118.4688729, "q": "Thunderbird Bar, 12217 Wilshire Blvd, Los Angeles, CA 90025", "kind": "bar"}, "auld": {"name": "The Auld Fella", "type": "Irish pub", "addr": "11831 Wilshire Blvd, West LA", "win": [[720, 1500]], "hours": "12 PM to 1 AM", "lat": 34.0477316, "lon": -118.4634131, "q": "The Auld Fella - Wilshire, 11831 Wilshire Blvd, Los Angeles, CA 90025", "kind": "bar"}, "tacos": {"name": "Tacos Por Favor Bar & Grill", "type": "Bar & grill", "addr": "2947 Lincoln Blvd, Santa Monica", "win": [[540, 1320]], "hours": "9 AM to 10 PM", "lat": 34.0041011, "lon": -118.4722853, "q": "Tacos Por Favor Bar & Grill, 2947 Lincoln Blvd, Santa Monica, CA 90405", "kind": "bar"}, "local": {"name": "Local Kitchen and Wine Bar", "type": "Italian restaurant", "addr": "1736 Ocean Park Blvd, Santa Monica", "win": [[960, 1260]], "hours": "4 PM to 9 PM", "lat": 34.0129083, "lon": -118.4657028, "q": "Local Kitchen and Wine Bar, 1736 Ocean Park Blvd, Santa Monica, CA 90405", "kind": "bar"}, "dailypint": {"name": "The Daily Pint", "type": "Bar", "addr": "2310 Pico Blvd, Santa Monica", "win": [[840, 1560]], "hours": "2 PM to 2 AM", "lat": 34.0211285, "lon": -118.4661691, "q": "The Daily Pint, 2310 Pico Blvd, Santa Monica, CA 90405", "kind": "bar"}, "brixton": {"name": "The Brixton", "type": "Gastropub", "addr": "2827 Pico Blvd, Santa Monica", "win": [[570, 1380]], "hours": "9:30 AM to 11 PM", "lat": 34.0247733, "lon": -118.4598698, "q": "The Brixton, 2827 Pico Blvd, Santa Monica, CA 90404", "kind": "bar"}, "upperwest": {"name": "The Upper West", "type": "New American restaurant", "addr": "3321 Pico Blvd, Santa Monica", "win": [[990, 1290]], "hours": "4:30 PM to 9:30 PM", "lat": 34.027219, "lon": -118.4549933, "q": "The Upper West, 3321 Pico Blvd, Santa Monica, CA 90405", "kind": "bar"}, "tinys": {"name": "Tiny's Hi-Dive", "type": "Bar", "addr": "12012 W Pico Blvd, West LA", "win": [[690, 1560]], "hours": "11:30 AM to 2 AM", "lat": 34.0295954, "lon": -118.4494709, "q": "Tiny's Hi-Dive, 12012 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "sns": {"name": "Sorry Not Sorry", "type": "New American restaurant", "addr": "11520 W Pico Blvd, West LA", "win": [[720, 1440]], "hours": "12 PM to 12 AM", "lat": 34.0330807, "lon": -118.4425183, "q": "Sorry Not Sorry, 11520 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "dots": {"name": "dots space KARAOKE", "type": "Karaoke bar", "addr": "2130 Sawtelle Blvd #101, West LA", "win": [[840, 1680]], "hours": "2 PM to 4 AM", "lat": 34.0390561, "lon": -118.4414552, "q": "dots space KARAOKE, 2130 Sawtelle Blvd, Los Angeles, CA 90025", "kind": "bar"}, "sake": {"name": "Sawtelle Sake", "type": "Wine bar", "addr": "1836 Sawtelle Blvd, West LA", "win": [[1020, 1350]], "hours": "5 PM to 10:30 PM", "lat": 34.0431743, "lon": -118.4453174, "q": "Sawtelle Sake, 1836 Sawtelle Blvd, Los Angeles, CA 90025", "kind": "bar"}, "nickel": {"name": "The Nickel Mine", "type": "Sports bar", "addr": "11363 Santa Monica Blvd, West LA", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0459906, "lon": -118.4507505, "q": "The Nickel Mine, 11363 Santa Monica Blvd, Los Angeles, CA 90025", "kind": "bar"}, "vbbk": {"name": "The Venice Beach Bar & Kitchen", "type": "Bar & grill", "addr": "323 Ocean Front Walk, Venice", "win": [[660, 1320]], "hours": "11 AM to 10 PM", "lat": 33.9941151, "lon": -118.4798821, "q": "The Venice Beach Bar & Kitchen, 323 Ocean Front Walk, Venice, CA 90291", "kind": "bar"}, "waterfront": {"name": "The Waterfront Venice", "type": "American restaurant", "addr": "205 Ocean Front Walk, Venice", "win": [[720, 1320]], "hours": "12 PM to 10 PM", "lat": 33.9950798, "lon": -118.4807665, "q": "The Waterfront Venice, 205 Ocean Front Walk, Venice, CA 90291", "kind": "bar"}, "library": {"name": "Library Alehouse", "type": "American restaurant", "addr": "2911 Main St, Santa Monica", "win": [[690, 1380]], "hours": "11:30 AM to 11 PM", "lat": 33.9993907, "lon": -118.4806305, "q": "Library Alehouse, 2911 Main St, Santa Monica, CA 90405", "kind": "bar"}, "fortuna": {"name": "Bar Fortuna", "type": "Cocktail bar", "addr": "2917 Main St, Santa Monica", "win": [[720, 1440]], "hours": "12 PM to 12 AM", "lat": 33.999301, "lon": -118.4804999, "q": "Bar Fortuna, 2917 Main St, Santa Monica, CA 90405", "kind": "bar"}, "ashland": {"name": "Ashland Hill", "type": "Bar & grill", "addr": "2807 Main St, Santa Monica", "win": [[600, 1320]], "hours": "10 AM to 10 PM", "lat": 34.0001965, "lon": -118.4814561, "q": "Ashland Hill, 2807 Main St, Santa Monica, CA 90405", "kind": "bar"}, "victorian": {"name": "The Victorian", "type": "New American restaurant", "addr": "2640 Main St, Santa Monica", "win": [[960, 1560]], "hours": "4 PM to 2 AM", "lat": 34.0013332, "lon": -118.4832601, "q": "The Victorian, 2640 Main St, Santa Monica, CA 90405", "kind": "bar"}, "antonette": {"name": "Diner Antonette", "type": "American restaurant", "addr": "1213 Wilshire Blvd, Santa Monica", "win": [[660, 1350]], "hours": "11 AM to 10:30 PM", "lat": 34.0256869, "lon": -118.4905545, "q": "Diner Antonette, 1213 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "gaslite": {"name": "The GasLite", "type": "Bar", "addr": "2030 Wilshire Blvd, Santa Monica", "win": [[360, 1560]], "hours": "6 AM to 2 AM", "lat": 34.0318861, "lon": -118.4822575, "q": "The GasLite, 2030 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "offhand": {"name": "Offhand Wine Bar", "type": "Wine bar", "addr": "3008 Santa Monica Blvd Ste A, Santa Monica", "win": [[720, 1440]], "hours": "12 PM to 12 AM", "lat": 34.0364206, "lon": -118.4701297, "q": "Offhand Wine Bar, 3008 Santa Monica Blvd, Santa Monica, CA 90404", "kind": "bar"}, "neat": {"name": "neat.", "type": "Bar", "addr": "11780 W Pico Blvd, West LA", "win": [[1020, 1560]], "hours": "5 PM to 2 AM", "lat": 34.030608, "lon": -118.447164, "q": "neat., 11780 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "rosegold": {"name": "The Rosegold Saloon", "type": "Bar", "addr": "11501 W Pico Blvd, West LA", "win": [[1020, 1560]], "hours": "5 PM to 2 AM", "lat": 34.0334121, "lon": -118.4426905, "q": "The Rosegold Saloon, 11501 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "benjamin": {"name": "Benjamin's place", "addr": "4th St & Idaho Ave, Santa Monica", "corner": "4th & Idaho", "lat": 34.0231973, "lon": -118.5030962, "q": "4th St & Idaho Ave, Santa Monica, CA 90403", "kind": "friend"}, "david": {"name": "David's place", "addr": "16th St & Washington Ave, Santa Monica", "corner": "16th & Washington", "lat": 34.0310633, "lon": -118.4901832, "q": "16th St & Washington Ave, Santa Monica, CA 90403", "kind": "friend"}}, "home": {"name": "Wally's place", "lat": 33.989, "lon": -118.455}, "end": {"name": "Max and Eric's place", "lat": 34.0455729, "lon": -118.4547451, "q": "Federal Ave & Ohio Ave, Los Angeles, CA 90025"}, "legs": {"HOME>socal": [14, "0.6 mi"], "socal>kassi": [14, "0.6 mi"], "HOME>vwest": [19, "0.8 mi"], "vwest>wurst": [11, "0.5 mi"], "wurst>chulita": [12, "0.5 mi"], "chulita>jamesons": [17, "0.8 mi"], "jamesons>sugarpalm": [17, "0.7 mi"], "sugarpalm>backyard": [6, "0.3 mi"], "backyard>courtside": [7, "0.3 mi"], "courtside>bodega": [12, "0.5 mi"], "bodega>jps": [14, "0.6 mi"], "obriens>sonny": [7, "0.3 mi"], "sonny>busbys": [14, "0.6 mi"], "busbys>genlee": [7, "0.3 mi"], "genlee>tbird": [9, "0.4 mi"], "tbird>auld": [11, "0.5 mi"], "auld>END": [18, "0.8 mi"], "jamesons>tacos": [18, "0.8 mi"], "tacos>local": [23, "1.0 mi"], "local>dailypint": [18, "0.8 mi"], "dailypint>brixton": [11, "0.5 mi"], "brixton>upperwest": [7, "0.3 mi"], "upperwest>tinys": [9, "0.4 mi"], "dots>sake": [9, "0.4 mi"], "sake>nickel": [10, "0.4 mi"], "nickel>END": [6, "0.3 mi"], "zinque>wurst": [8, "0.4 mi"], "kassi>vbc": [17, "0.8 mi"], "vbc>jamesons": [13, "0.6 mi"], "jps>obriens": [21, "0.9 mi"], "tinys>sns": [11, "0.5 mi"], "sns>dots": [15, "0.6 mi"], "courtside>benjamin": [22, "1.0 mi"], "benjamin>bodega": [25, "1.1 mi"], "bodega>benjamin": [26, "1.1 mi"], "benjamin>jps": [21, "0.9 mi"], "jps>david": [15, "0.6 mi"], "david>obriens": [17, "0.8 mi"], "jamesons>backyard": [22, "0.9 mi"], "backyard>bodega": [19, "0.8 mi"], "bodega>obriens": [34, "1.4 mi"], "obriens>busbys": [21, "0.9 mi"], "busbys>tbird": [12, "0.5 mi"], "tbird>END": [23, "1.0 mi"], "sugarpalm>courtside": [13, "0.6 mi"], "courtside>jps": [26, "1.1 mi"], "jps>sonny": [27, "1.2 mi"], "sonny>genlee": [21, "0.9 mi"], "genlee>auld": [19, "0.8 mi"], "socal>sidewalk": [18, "0.8 mi"], "sidewalk>vbc": [12, "0.6 mi"], "kassi>jamesons": [26, "1.2 mi"], "vwest>chulita": [23, "1.0 mi"], "zinque>chulita": [20, "0.9 mi"], "jamesons>local": [33, "1.4 mi"], "local>brixton": [28, "1.2 mi"], "brixton>tinys": [15, "0.7 mi"], "tinys>dots": [24, "1.0 mi"], "dots>nickel": [19, "0.8 mi"], "tacos>dailypint": [40, "1.7 mi"], "dailypint>upperwest": [17, "0.8 mi"], "upperwest>sns": [20, "0.8 mi"], "sns>sake": [22, "0.9 mi"], "sake>END": [16, "0.7 mi"], "jamesons>dailypint": [51, "2.2 mi"], "dailypint>tinys": [25, "1.1 mi"], "tinys>sake": [32, "1.4 mi"], "local>upperwest": [34, "1.5 mi"], "upperwest>dots": [33, "1.4 mi"], "dots>END": [25, "1.1 mi"], "tacos>brixton": [51, "2.2 mi"], "brixton>sns": [26, "1.1 mi"], "sns>nickel": [27, "1.2 mi"], "HOME>zinque": [23, "1.0 mi"], "socal>vbbk": [25, "1.1 mi"], "vbbk>waterfront": [3, "0.1 mi"], "waterfront>vbc": [1, "361 ft"], "vbc>library": [10, "0.4 mi"], "library>fortuna": [0, "13 ft"], "fortuna>ashland": [2, "413 ft"], "ashland>jamesons": [2, "0.1 mi"], "kassi>sidewalk": [4, "0.2 mi"], "sidewalk>vbbk": [12, "0.6 mi"], "vbbk>vbc": [1, "282 ft"], "vbc>fortuna": [10, "0.4 mi"], "fortuna>jamesons": [4, "0.2 mi"], "kassi>vbbk": [16, "0.7 mi"], "vbbk>library": [11, "0.5 mi"], "library>ashland": [2, "427 ft"], "kassi>waterfront": [18, "0.8 mi"], "waterfront>library": [9, "0.4 mi"], "library>jamesons": [4, "0.2 mi"], "sidewalk>waterfront": [14, "0.6 mi"], "waterfront>fortuna": [9, "0.4 mi"], "vbc>ashland": [12, "0.5 mi"], "vwest>zinque": [5, "0.2 mi"], "zinque>library": [33, "1.5 mi"], "wurst>library": [25, "1.1 mi"], "wurst>fortuna": [25, "1.1 mi"], "chulita>library": [13, "0.6 mi"], "chulita>fortuna": [13, "0.6 mi"], "chulita>ashland": [15, "0.7 mi"], "jamesons>victorian": [2, "0.1 mi"], "victorian>sugarpalm": [17, "0.7 mi"], "sugarpalm>bodega": [23, "1.0 mi"], "bodega>antonette": [16, "0.7 mi"], "antonette>david": [13, "0.5 mi"], "david>gaslite": [14, "0.6 mi"], "gaslite>obriens": [3, "0.1 mi"], "obriens>offhand": [19, "0.8 mi"], "offhand>busbys": [2, "413 ft"], "busbys>auld": [24, "1.0 mi"], "victorian>backyard": [21, "0.9 mi"], "backyard>jps": [33, "1.4 mi"], "jps>antonette": [2, "0.1 mi"], "antonette>gaslite": [15, "0.6 mi"], "gaslite>sonny": [10, "0.4 mi"], "sonny>offhand": [13, "0.5 mi"], "offhand>genlee": [9, "0.4 mi"], "genlee>END": [17, "0.8 mi"], "victorian>courtside": [27, "1.2 mi"], "courtside>antonette": [28, "1.2 mi"], "antonette>obriens": [18, "0.8 mi"], "bodega>gaslite": [31, "1.3 mi"], "gaslite>offhand": [22, "1.0 mi"], "offhand>tbird": [14, "0.6 mi"], "benjamin>antonette": [23, "1.0 mi"], "antonette>sonny": [25, "1.1 mi"], "jps>gaslite": [18, "0.7 mi"], "victorian>tacos": [21, "0.9 mi"], "brixton>neat": [19, "0.8 mi"], "neat>sns": [7, "0.3 mi"], "sns>rosegold": [1, "210 ft"], "rosegold>dots": [16, "0.6 mi"], "upperwest>neat": [12, "0.5 mi"], "neat>rosegold": [7, "0.3 mi"], "rosegold>sake": [23, "0.9 mi"], "tinys>neat": [3, "0.2 mi"], "neat>dots": [21, "0.9 mi"], "tinys>rosegold": [11, "0.5 mi"], "rosegold>nickel": [27, "1.1 mi"]}, "slots": {"bw": [{"p": "socal"}, {"p": "kassi", "alt": ["sidewalk"]}, {"p": "sidewalk", "x": 1}, {"p": "vbbk", "x": 1}, {"p": "waterfront", "x": 1}, {"p": "vbc"}], "ln": [{"p": "vwest", "alt": ["zinque"]}, {"p": "zinque", "x": 1}, {"p": "wurst"}, {"p": "chulita"}], "main": [{"p": "library", "x": 1}, {"p": "fortuna", "x": 1}, {"p": "ashland", "x": 1}, {"p": "jamesons"}], "wi": [{"p": "victorian", "x": 1}, {"p": "sugarpalm"}, {"p": "backyard"}, {"p": "courtside"}, {"p": "bodega"}, {"f": "benjamin"}, {"p": "jps"}, {"p": "antonette", "x": 1}, {"f": "david"}, {"p": "gaslite", "x": 1}, {"p": "obriens"}, {"p": "sonny"}, {"p": "offhand", "x": 1}, {"p": "busbys"}, {"p": "genlee"}, {"p": "tbird"}, {"p": "auld"}], "pi": [{"p": "victorian", "x": 1}, {"p": "tacos"}, {"p": "local"}, {"p": "dailypint"}, {"p": "brixton"}, {"p": "upperwest"}, {"p": "tinys"}, {"p": "neat", "x": 1}, {"p": "sns"}, {"p": "rosegold", "x": 1}, {"p": "dots"}, {"p": "sake"}, {"p": "nickel"}]}, "routes": [{"id": "r1", "num": 1, "name": "Boardwalk to Wilshire", "start": "bw", "finish": "wi", "gmi": 8.8, "areas": "Abbot Kinney, the Venice boardwalk, Main St, Ocean Ave, downtown Santa Monica, Wilshire", "tip": "The Nickel Mine (11363 Santa Monica Blvd, open until 2 AM) is a 5 min walk from Max and Eric's place if you want one more."}, {"id": "r2", "num": 2, "name": "Boardwalk to Sawtelle", "start": "bw", "finish": "pi", "gmi": 8.4, "areas": "Abbot Kinney, the Venice boardwalk, Main St, Ocean Park, Pico Blvd, Sawtelle", "tip": ""}, {"id": "r3", "num": 3, "name": "Lincoln to Wilshire", "start": "ln", "finish": "wi", "gmi": 8.7, "areas": "Lincoln Blvd, Rose Ave, Main St, Ocean Ave, downtown Santa Monica, Wilshire", "tip": "The Nickel Mine (11363 Santa Monica Blvd, open until 2 AM) is a 5 min walk from Max and Eric's place if you want one more."}, {"id": "r4", "num": 4, "name": "Lincoln to Sawtelle", "start": "ln", "finish": "pi", "gmi": 8.4, "areas": "Lincoln Blvd, Rose Ave, Main St, Ocean Park, Pico Blvd, Sawtelle", "tip": ""}]};
-const SEGNAME = {bw:"Boardwalk start", ln:"Lincoln start", main:"Main St, where all four meet", wi:"Wilshire finish", pi:"Sawtelle finish"};
+const D = {"places": {"socal": {"name": "SoCal Vibes Co.", "type": "Bar", "addr": "1522 Abbot Kinney Blvd, Venice", "win": [[600, 1440]], "hours": "10 AM to 12 AM", "lat": 33.9898736, "lon": -118.4641958, "q": "SoCal Vibes Co. Abbot Kinney, 1522 Abbot Kinney Blvd, Venice, CA 90291", "kind": "bar"}, "kassi": {"name": "Kassi", "type": "Bar", "addr": "1697 Pacific Ave, Venice", "win": [[660, 1440]], "hours": "11 AM to 12 AM", "lat": 33.9869585, "lon": -118.4725003, "q": "Kassi, 1697 Pacific Ave, Venice, CA 90291", "kind": "bar"}, "sidewalk": {"name": "The Sidewalk Cafe", "type": "American restaurant", "addr": "1401 Ocean Front Walk, Venice", "win": [[480, 1320]], "hours": "8 AM to 10 PM", "lat": 33.9879633, "lon": -118.4744814, "q": "The Sidewalk Cafe, 1401 Ocean Front Walk, Venice, CA 90291", "kind": "bar"}, "vbc": {"name": "Venice Beach Club", "type": "Southern Italian restaurant", "addr": "2 Rose Ave, Venice", "win": [[660, 1320]], "hours": "11 AM to 10 PM", "lat": 33.9945646, "lon": -118.4803193, "q": "Venice Beach Club, 2 Rose Ave, Venice, CA 90291", "kind": "bar"}, "vwest": {"name": "The Venice West", "type": "Live music venue", "addr": "1717 Lincoln Blvd, Venice", "win": [[660, 900], [1080, 1560]], "hours": "11 AM to 3 PM, 6 PM to 2 AM", "lat": 33.9963379, "lon": -118.4578322, "q": "The Venice West, 1717 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "zinque": {"name": "Zinqué", "type": "French restaurant", "addr": "1440 Lincoln Blvd, Venice", "win": [[420, 1380]], "hours": "7 AM to 11 PM", "lat": 33.9978505, "lon": -118.4599806, "q": "Zinqué Venice, 1440 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "wurst": {"name": "Wurstküche", "type": "German restaurant", "addr": "625 Lincoln Blvd, Venice", "win": [[690, 1380]], "hours": "11:30 AM to 11 PM", "lat": 33.9997898, "lon": -118.4649875, "q": "Wurstküche Restaurant Venice Beach, 625 Lincoln Blvd, Venice, CA 90291", "kind": "bar"}, "chulita": {"name": "Chulita", "type": "Mexican restaurant", "addr": "533 Rose Ave, Venice", "win": [[540, 1380]], "hours": "9 AM to 11 PM", "lat": 33.99886, "lon": -118.47311, "q": "Chulita, 533 Rose Ave, Venice, CA 90291", "kind": "bar"}, "jamesons": {"name": "Jameson's Pub", "type": "Irish pub", "addr": "2702 Main St, Santa Monica", "win": [[540, 1560]], "hours": "9 AM to 2 AM", "lat": 34.0007499, "lon": -118.4825824, "q": "Jameson’s Pub, 2702 Main St, Santa Monica, CA 90405", "kind": "bar"}, "sugarpalm": {"name": "Sugar Palm", "type": "Restaurant", "addr": "1819 Ocean Ave, Santa Monica", "win": [[420, 1320]], "hours": "7 AM to 10 PM", "lat": 34.0080458, "lon": -118.4903651, "q": "Sugar Palm Santa Monica, 1819 Ocean Ave, Santa Monica, CA 90401", "kind": "bar"}, "backyard": {"name": "The Backyard", "type": "Cocktail bar", "addr": "1657 Ocean Ave, Santa Monica", "win": [[600, 1380]], "hours": "10 AM to 11 PM", "lat": 34.010459, "lon": -118.4932664, "q": "The Backyard, 1657 Ocean Ave, Santa Monica, CA 90401", "kind": "bar"}, "courtside": {"name": "The Courtside Lounge", "type": "Restaurant", "addr": "123 Broadway, Santa Monica", "win": [[720, 1380]], "hours": "12 PM to 11 PM", "lat": 34.0133869, "lon": -118.4959401, "q": "The Courtside Lounge, 123 Broadway, Santa Monica, CA 90401", "kind": "bar"}, "bodega": {"name": "Bodega Wine Bar", "type": "Wine bar", "addr": "814 Broadway, Santa Monica", "win": [[420, 1380]], "hours": "7 AM to 11 PM", "lat": 34.0183156, "lon": -118.4893379, "q": "Bodega Wine Bar, 814 Broadway, Santa Monica, CA 90401", "kind": "bar"}, "jps": {"name": "JP's Sports Bar & Grill", "type": "Sports bar", "addr": "925 Wilshire Blvd, Santa Monica", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0237402, "lon": -118.4929531, "q": "JP's Sports Bar & Grill, 925 Wilshire Blvd, Santa Monica, CA 90401", "kind": "bar"}, "obriens": {"name": "O'Briens Irish Pub", "type": "Irish pub", "addr": "2226 Wilshire Blvd, Santa Monica", "win": [[300, 1530]], "hours": "5 AM to 1:30 AM", "lat": 34.0331676, "lon": -118.4806345, "q": "O'Briens Irish Pub, 2226 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "sonny": {"name": "Sonny McLean's", "type": "Irish pub", "addr": "2615 Wilshire Blvd, Santa Monica", "win": [[540, 1560]], "hours": "9 AM to 2 AM", "lat": 34.0364965, "lon": -118.4771634, "q": "Sonny McLean's Irish Pub, 2615 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "busbys": {"name": "Busby's West", "type": "Bar & grill", "addr": "3110 Santa Monica Blvd, Santa Monica", "win": [[540, 1530]], "hours": "9 AM to 1:30 AM", "lat": 34.0371116, "lon": -118.469102, "q": "Busby's West, 3110 Santa Monica Blvd, Santa Monica, CA 90404", "kind": "bar"}, "genlee": {"name": "General Lee's Bamboo Room", "type": "Bar", "addr": "12238 Santa Monica Blvd, West LA", "win": [[1020, 1560]], "hours": "5 PM to 2 AM", "lat": 34.0395721, "lon": -118.464931, "q": "General Lee's Bamboo Room, 12238 Santa Monica Blvd, Los Angeles, CA 90025", "kind": "bar"}, "tbird": {"name": "Thunderbird Bar", "type": "Bar", "addr": "12217 Wilshire Blvd, West LA", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0433896, "lon": -118.4688729, "q": "Thunderbird Bar, 12217 Wilshire Blvd, Los Angeles, CA 90025", "kind": "bar"}, "auld": {"name": "The Auld Fella", "type": "Irish pub", "addr": "11831 Wilshire Blvd, West LA", "win": [[720, 1500]], "hours": "12 PM to 1 AM", "lat": 34.0477316, "lon": -118.4634131, "q": "The Auld Fella - Wilshire, 11831 Wilshire Blvd, Los Angeles, CA 90025", "kind": "bar"}, "tacos": {"name": "Tacos Por Favor Bar & Grill", "type": "Bar & grill", "addr": "2947 Lincoln Blvd, Santa Monica", "win": [[540, 1320]], "hours": "9 AM to 10 PM", "lat": 34.0041011, "lon": -118.4722853, "q": "Tacos Por Favor Bar & Grill, 2947 Lincoln Blvd, Santa Monica, CA 90405", "kind": "bar"}, "local": {"name": "Local Kitchen and Wine Bar", "type": "Italian restaurant", "addr": "1736 Ocean Park Blvd, Santa Monica", "win": [[960, 1260]], "hours": "4 PM to 9 PM", "lat": 34.0129083, "lon": -118.4657028, "q": "Local Kitchen and Wine Bar, 1736 Ocean Park Blvd, Santa Monica, CA 90405", "kind": "bar"}, "dailypint": {"name": "The Daily Pint", "type": "Bar", "addr": "2310 Pico Blvd, Santa Monica", "win": [[840, 1560]], "hours": "2 PM to 2 AM", "lat": 34.0211285, "lon": -118.4661691, "q": "The Daily Pint, 2310 Pico Blvd, Santa Monica, CA 90405", "kind": "bar"}, "brixton": {"name": "The Brixton", "type": "Gastropub", "addr": "2827 Pico Blvd, Santa Monica", "win": [[570, 1380]], "hours": "9:30 AM to 11 PM", "lat": 34.0247733, "lon": -118.4598698, "q": "The Brixton, 2827 Pico Blvd, Santa Monica, CA 90404", "kind": "bar"}, "upperwest": {"name": "The Upper West", "type": "New American restaurant", "addr": "3321 Pico Blvd, Santa Monica", "win": [[990, 1290]], "hours": "4:30 PM to 9:30 PM", "lat": 34.027219, "lon": -118.4549933, "q": "The Upper West, 3321 Pico Blvd, Santa Monica, CA 90405", "kind": "bar"}, "tinys": {"name": "Tiny's Hi-Dive", "type": "Bar", "addr": "12012 W Pico Blvd, West LA", "win": [[690, 1560]], "hours": "11:30 AM to 2 AM", "lat": 34.0295954, "lon": -118.4494709, "q": "Tiny's Hi-Dive, 12012 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "sns": {"name": "Sorry Not Sorry", "type": "New American restaurant", "addr": "11520 W Pico Blvd, West LA", "win": [[720, 1440]], "hours": "12 PM to 12 AM", "lat": 34.0330807, "lon": -118.4425183, "q": "Sorry Not Sorry, 11520 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "dots": {"name": "dots space KARAOKE", "type": "Karaoke bar", "addr": "2130 Sawtelle Blvd #101, West LA", "win": [[840, 1680]], "hours": "2 PM to 4 AM", "lat": 34.0390561, "lon": -118.4414552, "q": "dots space KARAOKE, 2130 Sawtelle Blvd, Los Angeles, CA 90025", "kind": "bar"}, "sake": {"name": "Sawtelle Sake", "type": "Wine bar", "addr": "1836 Sawtelle Blvd, West LA", "win": [[1020, 1350]], "hours": "5 PM to 10:30 PM", "lat": 34.0431743, "lon": -118.4453174, "q": "Sawtelle Sake, 1836 Sawtelle Blvd, Los Angeles, CA 90025", "kind": "bar"}, "nickel": {"name": "The Nickel Mine", "type": "Sports bar", "addr": "11363 Santa Monica Blvd, West LA", "win": [[600, 1560]], "hours": "10 AM to 2 AM", "lat": 34.0459906, "lon": -118.4507505, "q": "The Nickel Mine, 11363 Santa Monica Blvd, Los Angeles, CA 90025", "kind": "bar"}, "vbbk": {"name": "The Venice Beach Bar & Kitchen", "type": "Bar & grill", "addr": "323 Ocean Front Walk, Venice", "win": [[660, 1320]], "hours": "11 AM to 10 PM", "lat": 33.9941151, "lon": -118.4798821, "q": "The Venice Beach Bar & Kitchen, 323 Ocean Front Walk, Venice, CA 90291", "kind": "bar"}, "waterfront": {"name": "The Waterfront Venice", "type": "American restaurant", "addr": "205 Ocean Front Walk, Venice", "win": [[720, 1320]], "hours": "12 PM to 10 PM", "lat": 33.9950798, "lon": -118.4807665, "q": "The Waterfront Venice, 205 Ocean Front Walk, Venice, CA 90291", "kind": "bar"}, "library": {"name": "Library Alehouse", "type": "American restaurant", "addr": "2911 Main St, Santa Monica", "win": [[690, 1380]], "hours": "11:30 AM to 11 PM", "lat": 33.9993907, "lon": -118.4806305, "q": "Library Alehouse, 2911 Main St, Santa Monica, CA 90405", "kind": "bar"}, "fortuna": {"name": "Bar Fortuna", "type": "Cocktail bar", "addr": "2917 Main St, Santa Monica", "win": [[720, 1440]], "hours": "12 PM to 12 AM", "lat": 33.999301, "lon": -118.4804999, "q": "Bar Fortuna, 2917 Main St, Santa Monica, CA 90405", "kind": "bar"}, "ashland": {"name": "Ashland Hill", "type": "Bar & grill", "addr": "2807 Main St, Santa Monica", "win": [[600, 1320]], "hours": "10 AM to 10 PM", "lat": 34.0001965, "lon": -118.4814561, "q": "Ashland Hill, 2807 Main St, Santa Monica, CA 90405", "kind": "bar"}, "victorian": {"name": "The Victorian", "type": "New American restaurant", "addr": "2640 Main St, Santa Monica", "win": [[960, 1560]], "hours": "4 PM to 2 AM", "lat": 34.0013332, "lon": -118.4832601, "q": "The Victorian, 2640 Main St, Santa Monica, CA 90405", "kind": "bar"}, "antonette": {"name": "Diner Antonette", "type": "American restaurant", "addr": "1213 Wilshire Blvd, Santa Monica", "win": [[660, 1350]], "hours": "11 AM to 10:30 PM", "lat": 34.0256869, "lon": -118.4905545, "q": "Diner Antonette, 1213 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "gaslite": {"name": "The GasLite", "type": "Bar", "addr": "2030 Wilshire Blvd, Santa Monica", "win": [[360, 1560]], "hours": "6 AM to 2 AM", "lat": 34.0318861, "lon": -118.4822575, "q": "The GasLite, 2030 Wilshire Blvd, Santa Monica, CA 90403", "kind": "bar"}, "offhand": {"name": "Offhand Wine Bar", "type": "Wine bar", "addr": "3008 Santa Monica Blvd Ste A, Santa Monica", "win": [[720, 1440]], "hours": "12 PM to 12 AM", "lat": 34.0364206, "lon": -118.4701297, "q": "Offhand Wine Bar, 3008 Santa Monica Blvd, Santa Monica, CA 90404", "kind": "bar"}, "neat": {"name": "neat.", "type": "Bar", "addr": "11780 W Pico Blvd, West LA", "win": [[1020, 1560]], "hours": "5 PM to 2 AM", "lat": 34.030608, "lon": -118.447164, "q": "neat., 11780 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "rosegold": {"name": "The Rosegold Saloon", "type": "Bar", "addr": "11501 W Pico Blvd, West LA", "win": [[1020, 1560]], "hours": "5 PM to 2 AM", "lat": 34.0334121, "lon": -118.4426905, "q": "The Rosegold Saloon, 11501 W Pico Blvd, Los Angeles, CA 90064", "kind": "bar"}, "benjamin": {"name": "Benjamin's place", "addr": "4th St & Idaho Ave, Santa Monica", "corner": "4th & Idaho", "lat": 34.0231973, "lon": -118.5030962, "q": "4th St & Idaho Ave, Santa Monica, CA 90403", "kind": "friend"}, "david": {"name": "David's place", "addr": "16th St & Washington Ave, Santa Monica", "corner": "16th & Washington", "lat": 34.0310633, "lon": -118.4901832, "q": "16th St & Washington Ave, Santa Monica, CA 90403", "kind": "friend"}, "yardhouse": {"name": "Yard House", "type": "New American restaurant", "addr": "13455 Maxella Ave, Marina del Rey", "win": [[660, 1470]], "hours": "11 AM to 12:30 AM", "lat": 33.9867655, "lon": -118.4415648, "q": "Yard House, 13455 Maxella Ave, Marina Del Rey, CA 90292", "kind": "bar"}, "firestone": {"name": "Firestone Walker Brewing Company - The Propagator", "type": "Brewery", "addr": "3205 Washington Blvd, Marina del Rey", "win": [[690, 1320]], "hours": "11:30 AM to 10 PM", "lat": 33.9898556, "lon": -118.4485472, "q": "Firestone Walker Brewing Company - The Propagator, 3205 Washington Blvd, Marina Del Rey, CA 90292", "kind": "bar", "short": "Firestone Walker"}, "littlefriend": {"name": "The Little Friend", "type": "Bar", "addr": "822 Washington Blvd, Venice", "win": [[1140, 1560]], "hours": "7 PM to 2 AM", "lat": 33.9880494, "lon": -118.4517884, "q": "The Little Friend, 822 Washington Blvd, Venice, CA 90292", "kind": "bar"}, "bill": {"name": "Bill's place", "addr": "1418 Elkgrove Cir, Venice", "corner": "1418 Elkgrove Cir", "lat": 34.0011772, "lon": -118.4581046, "q": "1418 Elkgrove Cir, Venice, CA 90291", "kind": "friend"}, "phillip": {"name": "Phillip's place", "addr": "13603 Marina Pointe Dr, Venice", "corner": "13603 Marina Pointe Dr", "lat": 33.9854, "lon": -118.4447271, "q": "13603 Marina Pointe Dr, Venice, CA 90292", "kind": "friend"}}, "home": {"name": "Wally's place", "short": "Wally's", "lat": 33.988353, "lon": -118.4547105, "q": "Coeur D Alene Ave & Abbot Kinney Blvd, Venice, CA 90291"}, "end": {"name": "Max and Eric's place", "lat": 34.0455729, "lon": -118.4547451, "q": "Federal Ave & Ohio Ave, Los Angeles, CA 90025", "short": "Max and Eric's"}, "legs": {"HOME>socal": [14, "0.6 mi"], "socal>kassi": [14, "0.6 mi"], "HOME>vwest": [19, "0.8 mi"], "vwest>wurst": [11, "0.5 mi"], "wurst>chulita": [12, "0.5 mi"], "chulita>jamesons": [17, "0.8 mi"], "jamesons>sugarpalm": [17, "0.7 mi"], "sugarpalm>backyard": [6, "0.3 mi"], "backyard>courtside": [7, "0.3 mi"], "courtside>bodega": [12, "0.5 mi"], "bodega>jps": [14, "0.6 mi"], "obriens>sonny": [7, "0.3 mi"], "sonny>busbys": [14, "0.6 mi"], "busbys>genlee": [7, "0.3 mi"], "genlee>tbird": [9, "0.4 mi"], "tbird>auld": [11, "0.5 mi"], "auld>END": [18, "0.8 mi"], "jamesons>tacos": [18, "0.8 mi"], "tacos>local": [23, "1.0 mi"], "local>dailypint": [18, "0.8 mi"], "dailypint>brixton": [11, "0.5 mi"], "brixton>upperwest": [7, "0.3 mi"], "upperwest>tinys": [9, "0.4 mi"], "dots>sake": [9, "0.4 mi"], "sake>nickel": [10, "0.4 mi"], "nickel>END": [6, "0.3 mi"], "zinque>wurst": [8, "0.4 mi"], "kassi>vbc": [17, "0.8 mi"], "vbc>jamesons": [13, "0.6 mi"], "jps>obriens": [21, "0.9 mi"], "tinys>sns": [11, "0.5 mi"], "sns>dots": [15, "0.6 mi"], "courtside>benjamin": [22, "1.0 mi"], "benjamin>bodega": [25, "1.1 mi"], "bodega>benjamin": [26, "1.1 mi"], "benjamin>jps": [21, "0.9 mi"], "jps>david": [15, "0.6 mi"], "david>obriens": [17, "0.8 mi"], "jamesons>backyard": [22, "0.9 mi"], "backyard>bodega": [19, "0.8 mi"], "bodega>obriens": [34, "1.4 mi"], "obriens>busbys": [21, "0.9 mi"], "busbys>tbird": [12, "0.5 mi"], "tbird>END": [23, "1.0 mi"], "sugarpalm>courtside": [13, "0.6 mi"], "courtside>jps": [26, "1.1 mi"], "jps>sonny": [27, "1.2 mi"], "sonny>genlee": [21, "0.9 mi"], "genlee>auld": [19, "0.8 mi"], "socal>sidewalk": [18, "0.8 mi"], "sidewalk>vbc": [12, "0.6 mi"], "kassi>jamesons": [26, "1.2 mi"], "vwest>chulita": [23, "1.0 mi"], "zinque>chulita": [20, "0.9 mi"], "jamesons>local": [33, "1.4 mi"], "local>brixton": [28, "1.2 mi"], "brixton>tinys": [15, "0.7 mi"], "tinys>dots": [24, "1.0 mi"], "dots>nickel": [19, "0.8 mi"], "tacos>dailypint": [40, "1.7 mi"], "dailypint>upperwest": [17, "0.8 mi"], "upperwest>sns": [20, "0.8 mi"], "sns>sake": [22, "0.9 mi"], "sake>END": [16, "0.7 mi"], "jamesons>dailypint": [51, "2.2 mi"], "dailypint>tinys": [25, "1.1 mi"], "tinys>sake": [32, "1.4 mi"], "local>upperwest": [34, "1.5 mi"], "upperwest>dots": [33, "1.4 mi"], "dots>END": [25, "1.1 mi"], "tacos>brixton": [51, "2.2 mi"], "brixton>sns": [26, "1.1 mi"], "sns>nickel": [27, "1.2 mi"], "HOME>zinque": [23, "1.0 mi"], "socal>vbbk": [25, "1.1 mi"], "vbbk>waterfront": [3, "0.1 mi"], "waterfront>vbc": [1, "361 ft"], "vbc>library": [10, "0.4 mi"], "library>fortuna": [0, "13 ft"], "fortuna>ashland": [2, "413 ft"], "ashland>jamesons": [2, "0.1 mi"], "kassi>sidewalk": [4, "0.2 mi"], "sidewalk>vbbk": [12, "0.6 mi"], "vbbk>vbc": [1, "282 ft"], "vbc>fortuna": [10, "0.4 mi"], "fortuna>jamesons": [4, "0.2 mi"], "kassi>vbbk": [16, "0.7 mi"], "vbbk>library": [11, "0.5 mi"], "library>ashland": [2, "427 ft"], "kassi>waterfront": [18, "0.8 mi"], "waterfront>library": [9, "0.4 mi"], "library>jamesons": [4, "0.2 mi"], "sidewalk>waterfront": [14, "0.6 mi"], "waterfront>fortuna": [9, "0.4 mi"], "vbc>ashland": [12, "0.5 mi"], "vwest>zinque": [5, "0.2 mi"], "zinque>library": [33, "1.5 mi"], "wurst>library": [25, "1.1 mi"], "wurst>fortuna": [25, "1.1 mi"], "chulita>library": [13, "0.6 mi"], "chulita>fortuna": [13, "0.6 mi"], "chulita>ashland": [15, "0.7 mi"], "jamesons>victorian": [2, "0.1 mi"], "victorian>sugarpalm": [17, "0.7 mi"], "sugarpalm>bodega": [23, "1.0 mi"], "bodega>antonette": [16, "0.7 mi"], "antonette>david": [13, "0.5 mi"], "david>gaslite": [14, "0.6 mi"], "gaslite>obriens": [3, "0.1 mi"], "obriens>offhand": [19, "0.8 mi"], "offhand>busbys": [2, "413 ft"], "busbys>auld": [24, "1.0 mi"], "victorian>backyard": [21, "0.9 mi"], "backyard>jps": [33, "1.4 mi"], "jps>antonette": [2, "0.1 mi"], "antonette>gaslite": [15, "0.6 mi"], "gaslite>sonny": [10, "0.4 mi"], "sonny>offhand": [13, "0.5 mi"], "offhand>genlee": [9, "0.4 mi"], "genlee>END": [17, "0.8 mi"], "victorian>courtside": [27, "1.2 mi"], "courtside>antonette": [28, "1.2 mi"], "antonette>obriens": [18, "0.8 mi"], "bodega>gaslite": [31, "1.3 mi"], "gaslite>offhand": [22, "1.0 mi"], "offhand>tbird": [14, "0.6 mi"], "benjamin>antonette": [23, "1.0 mi"], "antonette>sonny": [25, "1.1 mi"], "jps>gaslite": [18, "0.7 mi"], "victorian>tacos": [21, "0.9 mi"], "brixton>neat": [19, "0.8 mi"], "neat>sns": [7, "0.3 mi"], "sns>rosegold": [1, "210 ft"], "rosegold>dots": [16, "0.6 mi"], "upperwest>neat": [12, "0.5 mi"], "neat>rosegold": [7, "0.3 mi"], "rosegold>sake": [23, "0.9 mi"], "tinys>neat": [3, "0.2 mi"], "neat>dots": [21, "0.9 mi"], "tinys>rosegold": [11, "0.5 mi"], "rosegold>nickel": [27, "1.1 mi"], "jamesons>ashland": [2, "0.1 mi"], "ashland>library": [2, "427 ft"], "library>sugarpalm": [21, "0.9 mi"], "sugarpalm>jamesons": [17, "0.7 mi"], "jamesons>vbc": [13, "0.6 mi"], "vbc>vbbk": [1, "282 ft"], "vbbk>fortuna": [11, "0.5 mi"], "fortuna>waterfront": [9, "0.4 mi"], "waterfront>sidewalk": [14, "0.6 mi"], "sidewalk>fortuna": [22, "1.0 mi"], "fortuna>victorian": [6, "0.3 mi"], "victorian>jamesons": [2, "0.1 mi"], "jamesons>fortuna": [4, "0.2 mi"], "fortuna>chulita": [13, "0.6 mi"], "chulita>zinque": [20, "0.9 mi"], "zinque>vwest": [5, "0.2 mi"], "vwest>HOME": [19, "0.8 mi"], "HOME>yardhouse": [23, "1.0 mi"], "yardhouse>phillip": [5, "0.2 mi"], "phillip>littlefriend": [15, "0.7 mi"], "littlefriend>phillip": [16, "0.7 mi"], "phillip>firestone": [11, "0.5 mi"], "firestone>HOME": [9, "0.4 mi"], "HOME>littlefriend": [5, "0.2 mi"], "littlefriend>zinque": [27, "1.2 mi"], "zinque>littlefriend": [26, "1.2 mi"], "littlefriend>socal": [18, "0.8 mi"], "socal>HOME": [13, "0.6 mi"], "HOME>bill": [33, "1.5 mi"], "bill>HOME": [33, "1.5 mi"], "HOME>phillip": [20, "0.9 mi"], "phillip>yardhouse": [5, "0.2 mi"], "yardhouse>firestone": [13, "0.6 mi"], "firestone>yardhouse": [13, "0.6 mi"], "yardhouse>HOME": [22, "1.0 mi"], "HOME>firestone": [9, "0.4 mi"], "firestone>littlefriend": [6, "0.3 mi"], "littlefriend>vwest": [22, "1.0 mi"], "vwest>littlefriend": [22, "1.0 mi"], "littlefriend>firestone": [6, "0.3 mi"], "firestone>zinque": [23, "1.0 mi"], "zinque>HOME": [23, "1.0 mi"], "bodega>sugarpalm": [22, "1.0 mi"], "sugarpalm>ashland": [19, "0.9 mi"], "ashland>waterfront": [10, "0.5 mi"], "waterfront>kassi": [18, "0.8 mi"], "kassi>socal": [14, "0.6 mi"], "socal>wurst": [22, "1.0 mi"], "wurst>socal": [21, "1.0 mi"], "socal>littlefriend": [18, "0.8 mi"], "littlefriend>HOME": [5, "0.2 mi"], "rosegold>upperwest": [19, "0.8 mi"], "upperwest>brixton": [7, "0.3 mi"], "brixton>local": [27, "1.2 mi"], "local>tacos": [21, "1.0 mi"], "tacos>fortuna": [17, "0.7 mi"], "fortuna>tacos": [17, "0.7 mi"], "tacos>library": [17, "0.7 mi"], "library>vbc": [10, "0.4 mi"], "vbc>kassi": [17, "0.8 mi"], "jps>benjamin": [20, "0.9 mi"], "benjamin>courtside": [20, "1.0 mi"], "courtside>backyard": [7, "0.3 mi"], "backyard>victorian": [20, "0.9 mi"], "victorian>ashland": [5, "0.2 mi"], "ashland>victorian": [5, "0.2 mi"], "victorian>vbc": [14, "0.7 mi"], "vbc>sidewalk": [12, "0.6 mi"], "sidewalk>kassi": [4, "0.2 mi"], "nickel>genlee": [21, "0.9 mi"], "genlee>offhand": [8, "0.4 mi"], "offhand>sonny": [13, "0.5 mi"], "sonny>obriens": [7, "0.3 mi"], "obriens>david": [17, "0.8 mi"], "david>sonny": [24, "1.1 mi"], "sonny>gaslite": [10, "0.4 mi"], "gaslite>david": [14, "0.6 mi"], "david>jps": [14, "0.6 mi"], "jps>backyard": [31, "1.4 mi"], "backyard>jamesons": [21, "0.9 mi"], "jamesons>library": [4, "0.2 mi"], "library>vbbk": [11, "0.5 mi"], "vbbk>kassi": [16, "0.7 mi"], "antonette>jps": [2, "0.1 mi"], "jps>bodega": [13, "0.6 mi"], "bodega>backyard": [18, "0.8 mi"], "backyard>sugarpalm": [6, "0.3 mi"], "sugarpalm>fortuna": [20, "0.9 mi"], "fortuna>sugarpalm": [21, "0.9 mi"], "sugarpalm>library": [20, "0.9 mi"], "library>sidewalk": [21, "1.0 mi"], "sidewalk>library": [22, "1.0 mi"], "library>victorian": [6, "0.3 mi"], "victorian>chulita": [19, "0.9 mi"], "chulita>bill": [24, "1.1 mi"], "bill>zinque": [9, "0.4 mi"], "zinque>bill": [9, "0.4 mi"], "bill>socal": [24, "1.1 mi"], "socal>zinque": [16, "0.7 mi"], "zinque>socal": [15, "0.7 mi"], "socal>bill": [25, "1.1 mi"], "bill>vwest": [14, "0.6 mi"], "vwest>bill": [14, "0.6 mi"], "bill>firestone": [32, "1.4 mi"], "firestone>bill": [32, "1.4 mi"], "bill>chulita": [24, "1.1 mi"], "chulita>socal": [20, "0.9 mi"], "socal>firestone": [22, "1.0 mi"], "firestone>socal": [22, "1.0 mi"], "socal>vwest": [15, "0.6 mi"], "vwest>socal": [14, "0.6 mi"], "socal>chulita": [20, "0.9 mi"], "chulita>victorian": [19, "0.9 mi"], "victorian>fortuna": [6, "0.3 mi"], "fortuna>vbc": [10, "0.4 mi"], "vbc>victorian": [15, "0.7 mi"], "victorian>library": [6, "0.3 mi"], "library>tacos": [17, "0.7 mi"], "tacos>victorian": [20, "0.9 mi"], "auld>offhand": [23, "1.1 mi"], "offhand>obriens": [19, "0.8 mi"], "obriens>antonette": [17, "0.8 mi"], "antonette>bodega": [15, "0.7 mi"], "bodega>david": [29, "1.2 mi"], "david>bodega": [26, "1.2 mi"], "bodega>courtside": [11, "0.5 mi"], "courtside>sugarpalm": [12, "0.6 mi"], "sugarpalm>victorian": [16, "0.7 mi"], "auld>nickel": [24, "1.1 mi"], "nickel>sake": [10, "0.4 mi"], "sake>neat": [26, "1.2 mi"], "neat>sake": [28, "1.2 mi"], "sake>dots": [8, "0.4 mi"], "dots>rosegold": [15, "0.6 mi"], "rosegold>tinys": [10, "0.5 mi"], "tinys>brixton": [16, "0.7 mi"], "brixton>dailypint": [10, "0.5 mi"], "dailypint>local": [17, "0.8 mi"], "ashland>tacos": [18, "0.7 mi"], "tacos>jamesons": [18, "0.8 mi"], "jamesons>waterfront": [12, "0.5 mi"], "waterfront>jamesons": [12, "0.5 mi"], "jamesons>chulita": [17, "0.8 mi"], "chulita>vwest": [23, "1.0 mi"], "vwest>firestone": [18, "0.8 mi"], "firestone>phillip": [11, "0.5 mi"], "phillip>HOME": [20, "0.9 mi"], "END>dots": [24, "1.1 mi"], "dots>sns": [14, "0.6 mi"], "sns>upperwest": [19, "0.8 mi"], "upperwest>dailypint": [18, "0.8 mi"], "END>nickel": [6, "0.3 mi"], "nickel>auld": [24, "1.1 mi"], "auld>tbird": [10, "0.5 mi"], "tbird>sonny": [14, "0.7 mi"], "sonny>tbird": [16, "0.7 mi"], "tbird>offhand": [13, "0.6 mi"], "offhand>auld": [25, "1.1 mi"], "auld>busbys": [21, "1.0 mi"], "busbys>gaslite": [23, "1.0 mi"], "gaslite>antonette": [14, "0.6 mi"], "antonette>benjamin": [23, "1.0 mi"], "benjamin>david": [24, "1.0 mi"], "david>benjamin": [23, "1.0 mi"], "END>tbird": [24, "1.0 mi"], "tbird>busbys": [11, "0.5 mi"], "busbys>offhand": [2, "413 ft"], "offhand>gaslite": [22, "1.0 mi"], "gaslite>jps": [16, "0.7 mi"], "jps>courtside": [24, "1.1 mi"], "sake>rosegold": [21, "0.9 mi"], "rosegold>sns": [1, "210 ft"], "sns>tinys": [10, "0.5 mi"], "tinys>upperwest": [9, "0.4 mi"], "upperwest>rosegold": [19, "0.8 mi"], "rosegold>neat": [7, "0.3 mi"], "neat>brixton": [19, "0.8 mi"], "END>sake": [16, "0.7 mi"], "sake>sns": [21, "0.9 mi"], "sns>neat": [7, "0.3 mi"], "neat>upperwest": [12, "0.5 mi"], "library>waterfront": [8, "0.4 mi"], "waterfront>ashland": [10, "0.5 mi"], "ashland>vbc": [11, "0.5 mi"], "vbc>waterfront": [2, "361 ft"], "waterfront>vbbk": [3, "0.1 mi"], "vbbk>sidewalk": [12, "0.6 mi"], "sidewalk>socal": [17, "0.8 mi"], "END>genlee": [17, "0.8 mi"], "genlee>nickel": [21, "0.9 mi"], "nickel>dots": [18, "0.8 mi"], "dots>tinys": [23, "1.0 mi"], "fortuna>wurst": [25, "1.1 mi"], "wurst>vwest": [11, "0.5 mi"], "fortuna>vbbk": [11, "0.5 mi"], "vbbk>socal": [25, "1.1 mi"], "tacos>ashland": [17, "0.7 mi"], "ashland>chulita": [15, "0.7 mi"], "chulita>vbc": [12, "0.5 mi"], "vbc>chulita": [12, "0.5 mi"], "chulita>wurst": [12, "0.5 mi"], "wurst>ashland": [27, "1.2 mi"], "ashland>wurst": [27, "1.2 mi"], "wurst>zinque": [8, "0.4 mi"], "zinque>firestone": [22, "1.0 mi"], "firestone>vwest": [18, "0.8 mi"], "END>auld": [19, "0.8 mi"], "auld>genlee": [18, "0.8 mi"], "genlee>sonny": [20, "0.9 mi"], "sonny>david": [24, "1.1 mi"], "david>antonette": [11, "0.5 mi"], "antonette>courtside": [26, "1.2 mi"], "ashland>vbbk": [13, "0.6 mi"], "vbbk>ashland": [13, "0.6 mi"], "ashland>fortuna": [2, "413 ft"], "fortuna>sidewalk": [21, "1.0 mi"], "ashland>sugarpalm": [20, "0.9 mi"], "library>chulita": [13, "0.6 mi"], "tbird>genlee": [8, "0.4 mi"], "genlee>busbys": [6, "0.3 mi"], "busbys>sonny": [14, "0.6 mi"], "fortuna>library": [0, "13 ft"], "library>wurst": [25, "1.1 mi"], "wurst>bill": [13, "0.6 mi"], "bill>wurst": [13, "0.6 mi"], "dots>neat": [20, "0.9 mi"], "neat>tinys": [3, "0.2 mi"], "yardhouse>littlefriend": [18, "0.8 mi"], "littlefriend>yardhouse": [18, "0.8 mi"], "obriens>gaslite": [3, "0.1 mi"], "gaslite>busbys": [24, "1.0 mi"], "busbys>obriens": [21, "0.9 mi"], "obriens>jps": [19, "0.9 mi"], "tinys>dailypint": [26, "1.1 mi"], "sonny>antonette": [23, "1.1 mi"], "jamesons>kassi": [26, "1.2 mi"], "sns>brixton": [26, "1.1 mi"], "sonny>jps": [26, "1.2 mi"], "nickel>sns": [25, "1.2 mi"], "courtside>victorian": [25, "1.2 mi"], "nickel>rosegold": [25, "1.1 mi"], "gaslite>bodega": [29, "1.3 mi"], "sake>tinys": [29, "1.4 mi"], "local>jamesons": [30, "1.4 mi"], "dots>upperwest": [32, "1.4 mi"], "library>zinque": [33, "1.5 mi"], "obriens>bodega": [31, "1.5 mi"], "upperwest>local": [34, "1.5 mi"], "dailypint>tacos": [38, "1.7 mi"]}, "spines": {"r1": [{"id": "phillip", "seg": "ma", "f": 1}, {"id": "yardhouse", "seg": "ma"}, {"id": "firestone", "seg": "ma"}, {"id": "littlefriend", "seg": "ma"}, {"id": "HOME", "seg": "ma", "a": 1}, {"id": "socal", "seg": "bw"}, {"id": "kassi", "seg": "bw", "alt": ["sidewalk"]}, {"id": "sidewalk", "seg": "bw", "x": 1}, {"id": "vbbk", "seg": "bw", "x": 1}, {"id": "waterfront", "seg": "bw", "x": 1}, {"id": "vbc", "seg": "bw"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "victorian", "seg": "wi", "x": 1}, {"id": "sugarpalm", "seg": "wi"}, {"id": "backyard", "seg": "wi"}, {"id": "courtside", "seg": "wi"}, {"id": "bodega", "seg": "wi"}, {"id": "benjamin", "seg": "wi", "f": 1}, {"id": "jps", "seg": "wi"}, {"id": "antonette", "seg": "wi", "x": 1}, {"id": "david", "seg": "wi", "f": 1}, {"id": "gaslite", "seg": "wi", "x": 1}, {"id": "obriens", "seg": "wi"}, {"id": "sonny", "seg": "wi"}, {"id": "offhand", "seg": "wi", "x": 1}, {"id": "busbys", "seg": "wi"}, {"id": "genlee", "seg": "wi"}, {"id": "tbird", "seg": "wi"}, {"id": "auld", "seg": "wi"}, {"id": "END", "seg": "end", "a": 1}], "r2": [{"id": "phillip", "seg": "ma", "f": 1}, {"id": "yardhouse", "seg": "ma"}, {"id": "firestone", "seg": "ma"}, {"id": "littlefriend", "seg": "ma"}, {"id": "HOME", "seg": "ma", "a": 1}, {"id": "socal", "seg": "bw"}, {"id": "kassi", "seg": "bw", "alt": ["sidewalk"]}, {"id": "sidewalk", "seg": "bw", "x": 1}, {"id": "vbbk", "seg": "bw", "x": 1}, {"id": "waterfront", "seg": "bw", "x": 1}, {"id": "vbc", "seg": "bw"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "victorian", "seg": "pi", "x": 1}, {"id": "tacos", "seg": "pi"}, {"id": "local", "seg": "pi"}, {"id": "dailypint", "seg": "pi"}, {"id": "brixton", "seg": "pi"}, {"id": "upperwest", "seg": "pi"}, {"id": "tinys", "seg": "pi"}, {"id": "neat", "seg": "pi", "x": 1}, {"id": "sns", "seg": "pi"}, {"id": "rosegold", "seg": "pi", "x": 1}, {"id": "dots", "seg": "pi"}, {"id": "sake", "seg": "pi"}, {"id": "nickel", "seg": "pi"}, {"id": "END", "seg": "end", "a": 1}], "r3": [{"id": "phillip", "seg": "ma", "f": 1}, {"id": "yardhouse", "seg": "ma"}, {"id": "firestone", "seg": "ma"}, {"id": "littlefriend", "seg": "ma"}, {"id": "HOME", "seg": "ma", "a": 1}, {"id": "vwest", "seg": "ln", "alt": ["zinque"]}, {"id": "zinque", "seg": "ln", "x": 1}, {"id": "bill", "seg": "ln", "f": 1}, {"id": "wurst", "seg": "ln"}, {"id": "chulita", "seg": "ln"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "victorian", "seg": "wi", "x": 1}, {"id": "sugarpalm", "seg": "wi"}, {"id": "backyard", "seg": "wi"}, {"id": "courtside", "seg": "wi"}, {"id": "bodega", "seg": "wi"}, {"id": "benjamin", "seg": "wi", "f": 1}, {"id": "jps", "seg": "wi"}, {"id": "antonette", "seg": "wi", "x": 1}, {"id": "david", "seg": "wi", "f": 1}, {"id": "gaslite", "seg": "wi", "x": 1}, {"id": "obriens", "seg": "wi"}, {"id": "sonny", "seg": "wi"}, {"id": "offhand", "seg": "wi", "x": 1}, {"id": "busbys", "seg": "wi"}, {"id": "genlee", "seg": "wi"}, {"id": "tbird", "seg": "wi"}, {"id": "auld", "seg": "wi"}, {"id": "END", "seg": "end", "a": 1}], "r4": [{"id": "phillip", "seg": "ma", "f": 1}, {"id": "yardhouse", "seg": "ma"}, {"id": "firestone", "seg": "ma"}, {"id": "littlefriend", "seg": "ma"}, {"id": "HOME", "seg": "ma", "a": 1}, {"id": "vwest", "seg": "ln", "alt": ["zinque"]}, {"id": "zinque", "seg": "ln", "x": 1}, {"id": "bill", "seg": "ln", "f": 1}, {"id": "wurst", "seg": "ln"}, {"id": "chulita", "seg": "ln"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "victorian", "seg": "pi", "x": 1}, {"id": "tacos", "seg": "pi"}, {"id": "local", "seg": "pi"}, {"id": "dailypint", "seg": "pi"}, {"id": "brixton", "seg": "pi"}, {"id": "upperwest", "seg": "pi"}, {"id": "tinys", "seg": "pi"}, {"id": "neat", "seg": "pi", "x": 1}, {"id": "sns", "seg": "pi"}, {"id": "rosegold", "seg": "pi", "x": 1}, {"id": "dots", "seg": "pi"}, {"id": "sake", "seg": "pi"}, {"id": "nickel", "seg": "pi"}, {"id": "END", "seg": "end", "a": 1}], "p1": [{"id": "HOME", "seg": "ma", "a": 1}, {"id": "phillip", "seg": "ma", "f": 1}, {"id": "yardhouse", "seg": "ma"}, {"id": "firestone", "seg": "ma"}, {"id": "littlefriend", "seg": "ma"}, {"id": "socal", "seg": "bw"}, {"id": "kassi", "seg": "bw", "alt": ["sidewalk"]}, {"id": "sidewalk", "seg": "bw", "x": 1}, {"id": "vbbk", "seg": "bw", "x": 1}, {"id": "waterfront", "seg": "bw", "x": 1}, {"id": "vbc", "seg": "bw"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "victorian", "seg": "wi", "x": 1}, {"id": "sugarpalm", "seg": "wi"}, {"id": "backyard", "seg": "wi"}, {"id": "courtside", "seg": "wi"}, {"id": "bodega", "seg": "wi"}, {"id": "benjamin", "seg": "wi", "f": 1}, {"id": "jps", "seg": "wi"}, {"id": "antonette", "seg": "wi", "x": 1}, {"id": "david", "seg": "wi", "f": 1}, {"id": "gaslite", "seg": "wi", "x": 1}, {"id": "obriens", "seg": "wi"}, {"id": "sonny", "seg": "wi"}, {"id": "offhand", "seg": "wi", "x": 1}, {"id": "busbys", "seg": "wi"}, {"id": "genlee", "seg": "wi"}, {"id": "tbird", "seg": "wi"}, {"id": "auld", "seg": "wi"}, {"id": "END", "seg": "end", "a": 1}], "p2": [{"id": "HOME", "seg": "ma", "a": 1}, {"id": "phillip", "seg": "ma", "f": 1}, {"id": "yardhouse", "seg": "ma"}, {"id": "firestone", "seg": "ma"}, {"id": "littlefriend", "seg": "ma"}, {"id": "socal", "seg": "bw"}, {"id": "kassi", "seg": "bw", "alt": ["sidewalk"]}, {"id": "sidewalk", "seg": "bw", "x": 1}, {"id": "vbbk", "seg": "bw", "x": 1}, {"id": "waterfront", "seg": "bw", "x": 1}, {"id": "vbc", "seg": "bw"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "victorian", "seg": "pi", "x": 1}, {"id": "tacos", "seg": "pi"}, {"id": "local", "seg": "pi"}, {"id": "dailypint", "seg": "pi"}, {"id": "brixton", "seg": "pi"}, {"id": "upperwest", "seg": "pi"}, {"id": "tinys", "seg": "pi"}, {"id": "neat", "seg": "pi", "x": 1}, {"id": "sns", "seg": "pi"}, {"id": "rosegold", "seg": "pi", "x": 1}, {"id": "dots", "seg": "pi"}, {"id": "sake", "seg": "pi"}, {"id": "nickel", "seg": "pi"}, {"id": "END", "seg": "end", "a": 1}], "p3": [{"id": "HOME", "seg": "ma", "a": 1}, {"id": "phillip", "seg": "ma", "f": 1}, {"id": "yardhouse", "seg": "ma"}, {"id": "firestone", "seg": "ma"}, {"id": "littlefriend", "seg": "ma"}, {"id": "vwest", "seg": "ln", "alt": ["zinque"]}, {"id": "zinque", "seg": "ln", "x": 1}, {"id": "bill", "seg": "ln", "f": 1}, {"id": "wurst", "seg": "ln"}, {"id": "chulita", "seg": "ln"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "victorian", "seg": "wi", "x": 1}, {"id": "sugarpalm", "seg": "wi"}, {"id": "backyard", "seg": "wi"}, {"id": "courtside", "seg": "wi"}, {"id": "bodega", "seg": "wi"}, {"id": "benjamin", "seg": "wi", "f": 1}, {"id": "jps", "seg": "wi"}, {"id": "antonette", "seg": "wi", "x": 1}, {"id": "david", "seg": "wi", "f": 1}, {"id": "gaslite", "seg": "wi", "x": 1}, {"id": "obriens", "seg": "wi"}, {"id": "sonny", "seg": "wi"}, {"id": "offhand", "seg": "wi", "x": 1}, {"id": "busbys", "seg": "wi"}, {"id": "genlee", "seg": "wi"}, {"id": "tbird", "seg": "wi"}, {"id": "auld", "seg": "wi"}, {"id": "END", "seg": "end", "a": 1}], "p4": [{"id": "HOME", "seg": "ma", "a": 1}, {"id": "phillip", "seg": "ma", "f": 1}, {"id": "yardhouse", "seg": "ma"}, {"id": "firestone", "seg": "ma"}, {"id": "littlefriend", "seg": "ma"}, {"id": "vwest", "seg": "ln", "alt": ["zinque"]}, {"id": "zinque", "seg": "ln", "x": 1}, {"id": "bill", "seg": "ln", "f": 1}, {"id": "wurst", "seg": "ln"}, {"id": "chulita", "seg": "ln"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "victorian", "seg": "pi", "x": 1}, {"id": "tacos", "seg": "pi"}, {"id": "local", "seg": "pi"}, {"id": "dailypint", "seg": "pi"}, {"id": "brixton", "seg": "pi"}, {"id": "upperwest", "seg": "pi"}, {"id": "tinys", "seg": "pi"}, {"id": "neat", "seg": "pi", "x": 1}, {"id": "sns", "seg": "pi"}, {"id": "rosegold", "seg": "pi", "x": 1}, {"id": "dots", "seg": "pi"}, {"id": "sake", "seg": "pi"}, {"id": "nickel", "seg": "pi"}, {"id": "END", "seg": "end", "a": 1}], "x1": [{"id": "socal", "seg": "bw"}, {"id": "kassi", "seg": "bw", "alt": ["sidewalk"]}, {"id": "sidewalk", "seg": "bw", "x": 1}, {"id": "vbbk", "seg": "bw", "x": 1}, {"id": "waterfront", "seg": "bw", "x": 1}, {"id": "vbc", "seg": "bw"}, {"id": "library", "seg": "main", "x": 1}, {"id": "fortuna", "seg": "main", "x": 1}, {"id": "ashland", "seg": "main", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "chulita", "seg": "ln"}, {"id": "wurst", "seg": "ln"}, {"id": "bill", "seg": "ln", "f": 1}, {"id": "zinque", "seg": "ln", "x": 1}, {"id": "vwest", "seg": "ln", "alt": ["zinque"]}], "x2": [{"id": "auld", "seg": "wi"}, {"id": "tbird", "seg": "wi"}, {"id": "genlee", "seg": "wi"}, {"id": "busbys", "seg": "wi"}, {"id": "offhand", "seg": "wi", "x": 1}, {"id": "sonny", "seg": "wi"}, {"id": "obriens", "seg": "wi"}, {"id": "gaslite", "seg": "wi", "x": 1}, {"id": "david", "seg": "wi", "f": 1}, {"id": "antonette", "seg": "wi", "x": 1}, {"id": "jps", "seg": "wi"}, {"id": "benjamin", "seg": "wi", "f": 1}, {"id": "bodega", "seg": "wi"}, {"id": "courtside", "seg": "wi"}, {"id": "backyard", "seg": "wi"}, {"id": "sugarpalm", "seg": "wi"}, {"id": "victorian", "seg": "wi", "x": 1}, {"id": "jamesons", "seg": "main"}, {"id": "tacos", "seg": "pi"}, {"id": "local", "seg": "pi"}, {"id": "dailypint", "seg": "pi"}, {"id": "brixton", "seg": "pi"}, {"id": "upperwest", "seg": "pi"}, {"id": "tinys", "seg": "pi"}, {"id": "neat", "seg": "pi", "x": 1}, {"id": "sns", "seg": "pi"}, {"id": "rosegold", "seg": "pi", "x": 1}, {"id": "dots", "seg": "pi"}, {"id": "sake", "seg": "pi"}, {"id": "nickel", "seg": "pi"}], "x3": [{"id": "chulita", "seg": "ln"}, {"id": "wurst", "seg": "ln"}, {"id": "bill", "seg": "ln", "f": 1}, {"id": "zinque", "seg": "ln", "x": 1}, {"id": "vwest", "seg": "ln", "alt": ["zinque"]}, {"id": "HOME", "seg": "ma", "a": 1}, {"id": "socal", "seg": "bw"}, {"id": "kassi", "seg": "bw", "alt": ["sidewalk"]}, {"id": "sidewalk", "seg": "bw", "x": 1}, {"id": "vbbk", "seg": "bw", "x": 1}, {"id": "waterfront", "seg": "bw", "x": 1}, {"id": "vbc", "seg": "bw"}], "x4": [{"id": "victorian", "seg": "wi", "x": 1}, {"id": "sugarpalm", "seg": "wi"}, {"id": "backyard", "seg": "wi"}, {"id": "courtside", "seg": "wi"}, {"id": "bodega", "seg": "wi"}, {"id": "benjamin", "seg": "wi", "f": 1}, {"id": "jps", "seg": "wi"}, {"id": "antonette", "seg": "wi", "x": 1}, {"id": "david", "seg": "wi", "f": 1}, {"id": "gaslite", "seg": "wi", "x": 1}, {"id": "obriens", "seg": "wi"}, {"id": "sonny", "seg": "wi"}, {"id": "offhand", "seg": "wi", "x": 1}, {"id": "busbys", "seg": "wi"}, {"id": "genlee", "seg": "wi"}, {"id": "tbird", "seg": "wi"}, {"id": "auld", "seg": "wi"}, {"id": "END", "seg": "end", "a": 1}, {"id": "nickel", "seg": "pi"}, {"id": "sake", "seg": "pi"}, {"id": "dots", "seg": "pi"}, {"id": "rosegold", "seg": "pi", "x": 1}, {"id": "sns", "seg": "pi"}, {"id": "neat", "seg": "pi", "x": 1}, {"id": "tinys", "seg": "pi"}, {"id": "upperwest", "seg": "pi"}, {"id": "brixton", "seg": "pi"}, {"id": "dailypint", "seg": "pi"}, {"id": "local", "seg": "pi"}, {"id": "tacos", "seg": "pi"}]}, "routes": [{"id": "r1", "num": 1, "name": "Boardwalk to Wilshire", "start": "bw", "finish": "wi", "gmi": 8.8, "areas": "Abbot Kinney, the Venice boardwalk, Main St, Ocean Ave, downtown Santa Monica, Wilshire", "tip": "The Nickel Mine (11363 Santa Monica Blvd, open until 2 AM) is a 5 min walk from Max and Eric's place if you want one more.", "spine": "r1", "spineP": "p1"}, {"id": "r2", "num": 2, "name": "Boardwalk to Sawtelle", "start": "bw", "finish": "pi", "gmi": 8.4, "areas": "Abbot Kinney, the Venice boardwalk, Main St, Ocean Park, Pico Blvd, Sawtelle", "tip": "", "spine": "r2", "spineP": "p2"}, {"id": "r3", "num": 3, "name": "Lincoln to Wilshire", "start": "ln", "finish": "wi", "gmi": 8.7, "areas": "Lincoln Blvd, Rose Ave, Main St, Ocean Ave, downtown Santa Monica, Wilshire", "tip": "The Nickel Mine (11363 Santa Monica Blvd, open until 2 AM) is a 5 min walk from Max and Eric's place if you want one more.", "spine": "r3", "spineP": "p3"}, {"id": "r4", "num": 4, "name": "Lincoln to Sawtelle", "start": "ln", "finish": "pi", "gmi": 8.4, "areas": "Lincoln Blvd, Rose Ave, Main St, Ocean Park, Pico Blvd, Sawtelle", "tip": "", "spine": "r4", "spineP": "p4"}], "cross": ["x1", "x2", "x3", "x4"]};
+const SEGNAME = {bw:"Boardwalk", ln:"Lincoln", main:"Main St", wi:"Wilshire", pi:"Sawtelle", ma:"Marina"};
+const CORR = {ma:["the marina","Marina del Rey and Washington Blvd"], bw:["the boardwalk","Abbot Kinney and the Venice boardwalk"], ln:["Lincoln","Lincoln Blvd and Rose Ave"], main:["Main St","Main St"], wi:["Wilshire","Ocean Ave, downtown Santa Monica and Wilshire"], pi:["Sawtelle","Ocean Park, Pico Blvd and Sawtelle"]};
+const NICKEL = "The Nickel Mine (11363 Santa Monica Blvd, open until 2 AM) is a 5 min walk from Max and Eric's place if you want one more.";
+const FRIENDS = [["benjamin","Benjamin's place","4th & Idaho"],["david","David's place","16th & Washington"],["bill","Bill's place","1418 Elkgrove Cir"],["phillip","Phillip's place","13603 Marina Pointe Dr"]];
 const LONG = 20;
 /* Adding and dropping bars: the cost of a route is its total walking plus a penalty that grows with the square of each walk
    (so a route with even walks beats one with a few long hauls), plus a flat penalty for each walk over 20 min. */
 const BETA = 0.1, LONGPEN = 15;
-const want = {};   // route id -> number of bars picked with the plus and minus buttons
-const LAST = {};   // route id -> latest plan
+const want = {};   // route key -> number of bars picked with the plus and minus buttons
+const LAST = {};   // card id -> latest plan
+const SEL = {S:"HOME", E:"END"};   // chosen start and end
 
 function fmt(m){ m=((m%1440)+1440)%1440; let h=Math.floor(m/60); const mm=m%60; const ap=h>=12?"PM":"AM"; h=h%12; if(h===0) h=12; return h+":"+String(mm).padStart(2,"0")+" "+ap; }
 function hr(m){ return fmt(m).replace(":00",""); }
@@ -277,7 +297,10 @@ function quick(m){ return m>=10 ? m-2 : (m>=1 ? m-1 : 0); }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function leg(a,b){ return D.legs[a+">"+b]; }
 function miOf(d){ return parseFloat(d)*(d.endsWith("ft")?1/5280:1); }
-function nameOf(id){ return id==="END" ? D.end.name : id==="HOME" ? D.home.name : D.places[id].name; }
+function P(id){ return id==="HOME" ? D.home : id==="END" ? D.end : D.places[id]; }
+function isBar(id){ const p=D.places[id]; return !!p && p.kind==="bar"; }
+function nameOf(id){ return P(id).name; }
+function shortOf(id){ const p=P(id); return p.short || (p.kind==="friend" ? p.name.replace(/ place$/,"") : p.name); }
 function isOpen(p,t,stay){ return p.win.some(([o,c])=>o<=t && t+stay<=c); }
 function whyClosed(p,t,stay){
   const cur=p.win.find(([o,c])=>o<=t && t<c);
@@ -287,39 +310,42 @@ function whyClosed(p,t,stay){
   return "is closed by then";
 }
 function andList(a){ return a.length<=2 ? a.join(" and ") : a.slice(0,-1).join(", ")+" and "+a[a.length-1]; }
-const SL={};
-function slotsFor(r){
-  if(SL[r.id]) return SL[r.id];
-  const out=[];
-  for(const seg of [r.start,"main",r.finish]) D.slots[seg].forEach(s=>out.push({...s,seg}));
-  return SL[r.id]=out;
-}
 
-/* Original plan: walks the slots in order. Each bar slot can use its first pick, a nearby backup, or be skipped.
-   Bars marked x are left out here; they only come in when someone adds bars.
+/* A spine is one corridor in walking order. A route runs along it from the start to the end, in either direction.
+   Slots marked x are bars that only come in when someone presses plus. Slots marked a are Wally's or Max and Eric's place:
+   only ever a start or an end. Slots marked f are friends' places. */
+function midSlots(spine,S,E){
+  const ids=spine.map(s=>s.id), i=ids.indexOf(S), j=ids.indexOf(E);
+  if(i<0||j<0||i===j) return null;
+  return i<j ? spine.slice(i+1,j) : spine.slice(j+1,i).reverse();
+}
+function segIn(spine,id){ const s=spine.find(x=>x.id===id); return s && !s.a ? s.seg : null; }
+
+/* First plan: walks the slots in order. Each bar slot can use its first pick, a nearby backup, or be skipped.
    Score, lowest wins: friend stops missed, bars closed on arrival, walks over 20 min, fewer bars, backups used, total walking. */
-function basePlan(r,start,stay,friends){
-  const slots=slotsFor(r), memo=new Map();
+function basePlan(mid,S,E,start,stay,friends){
+  const memo=new Map();
   const better=(a,b)=>{ if(!b) return true; for(let i=0;i<a.length;i++){ if(a[i]!==b[i]) return a[i]<b[i]; } return false; };
   function rec(i,prev,t){
     const key=i+"|"+prev+"|"+t;
     if(memo.has(key)) return memo.get(key);
     let best=null;
-    if(i===slots.length){
-      const l=leg(prev,"END");
+    if(i===mid.length){
+      const l=leg(prev,E);
       if(l){ const w=quick(l[0]); best={score:[0,0,w>LONG?1:0,0,0,w],c:null,nxt:null}; }
       memo.set(key,best); return best;
     }
-    const s=slots[i];
+    const s=mid[i];
     const sub0=rec(i+1,prev,t);
-    if(sub0){ const sc=sub0.score.slice(); if(s.f && friends[s.f]) sc[0]+=1; best={score:sc,c:null,nxt:sub0}; }
-    if(!s.x){
-      const cands = s.f ? (friends[s.f] ? [s.f] : []) : [s.p,...(s.alt||[])];
+    if(sub0){ const sc=sub0.score.slice(); if(s.f && friends[s.id]) sc[0]+=1; best={score:sc,c:null,nxt:sub0}; }
+    if(!s.x && !s.a){
+      const cands = s.f ? (friends[s.id] ? [s.id] : []) : [s.id,...(s.alt||[])];
       for(const c of cands){
+        if(c===S||c===E) continue;
         const l=leg(prev,c); if(!l) continue;
         const w=quick(l[0]), arr=t+w, p=D.places[c];
         let closed=0,bar=0,swap=0;
-        if(p.kind==="bar"){ if(isOpen(p,arr,stay)) bar=1; else closed=1; swap = c!==s.p ? 1 : 0; }
+        if(p.kind==="bar"){ if(isOpen(p,arr,stay)) bar=1; else closed=1; swap = c!==s.id ? 1 : 0; }
         const sub=rec(i+1,c,arr+stay); if(!sub) continue;
         const sc=sub.score.slice(); sc[1]+=closed; sc[2]+=(w>LONG?1:0); sc[3]-=bar; sc[4]+=swap; sc[5]+=w;
         if(better(sc,best&&best.score)) best={score:sc,c,nxt:sub};
@@ -327,26 +353,26 @@ function basePlan(r,start,stay,friends){
     }
     memo.set(key,best); return best;
   }
-  const res=rec(0,"HOME",start), sel=[];
-  let n=res; for(let i=0;i<slots.length;i++){ sel.push(n.c); n=n.nxt; }
+  const res=rec(0,S,start+(isBar(S)?stay:0)); if(!res) return null;
+  const sel=[]; let n=res; for(let i=0;i<mid.length;i++){ sel.push(n.c); n=n.nxt; }
   return {sel, missed:res.score[0]};
 }
 
-/* Walk a chosen set of stops from Wally's place and time every arrival. Returns null if a walk between two stops isn't in the data. */
-function sim(r,sel,start,stay){
-  const slots=slotsFor(r), visits=[];
-  let prev="HOME", t=start;
-  for(let i=0;i<slots.length;i++){
+/* Walk a chosen set of stops and time every arrival. Returns null if a walk between two stops isn't in the data. */
+function sim(mid,sel,S,E,segE,start,stay){
+  const visits=[];
+  let prev=S, t=start+(isBar(S)?stay:0);
+  for(let i=0;i<mid.length;i++){
     const c=sel[i]; if(!c) continue;
     const l=leg(prev,c); if(!l) return null;
-    const s=slots[i], p=D.places[c], w=quick(l[0]), arr=t+w;
+    const s=mid[i], p=D.places[c], w=quick(l[0]), arr=t+w;
     visits.push({id:c,si:i,from:prev,l,w,arrive:arr,depart:arr+stay,kind:p.kind,seg:s.seg,
-      closed: p.kind==="bar" && !isOpen(p,arr,stay), swapFor: (s.p && c!==s.p) ? s.p : null});
+      closed: p.kind==="bar" && !isOpen(p,arr,stay), swapFor: (!s.f && c!==s.id) ? s.id : null});
     prev=c; t=arr+stay;
   }
-  const l=leg(prev,"END"); if(!l) return null;
-  const w=quick(l[0]);
-  visits.push({id:"END",from:prev,l,w,arrive:t+w,seg:slots[slots.length-1].seg});
+  const l=leg(prev,E); if(!l) return null;
+  const w=quick(l[0]), bar=isBar(E);
+  visits.push({id:E,end:true,from:prev,l,w,arrive:t+w,seg:segE,kind:bar?"bar":"home",closed: bar && !isOpen(D.places[E],t+w,stay)});
   return visits;
 }
 function cost(v){ let closed=0,c=0; for(const x of v){ if(x.closed) closed++; c+=x.w+BETA*x.w*x.w+(x.w>LONG?LONGPEN:0); } return [closed,c]; }
@@ -354,55 +380,93 @@ function nBars(sel){ return sel.filter(c=>c && D.places[c].kind==="bar").length;
 
 /* One click of plus or minus: try every bar that could come in (or go out) and keep the cheapest route.
    Never adds a bar that would be closed, and never makes another bar closed. */
-function stepSel(r,sel,dir,start,stay){
-  const slots=slotsFor(r), cur=sim(r,sel,start,stay); if(!cur) return null;
+function stepSel(mid,sel,dir,S,E,segE,start,stay){
+  const cur=sim(mid,sel,S,E,segE,start,stay); if(!cur) return null;
   const curClosed=cost(cur)[0], used=new Set(sel.filter(Boolean));
   let best=null;
   const consider=(nx,i)=>{
-    const v=sim(r,nx,start,stay); if(!v) return;
+    const v=sim(mid,nx,S,E,segE,start,stay); if(!v) return;
     if(dir>0 && v.find(x=>x.si===i).closed) return;
     const k=cost(v); if(k[0]>curClosed) return;
     if(!best || k[0]<best.k[0] || (k[0]===best.k[0] && k[1]<best.k[1]-1e-9)) best={sel:nx,k};
   };
-  for(let i=0;i<slots.length;i++){
-    const s=slots[i]; if(s.f) continue;
+  for(let i=0;i<mid.length;i++){
+    const s=mid[i]; if(s.f||s.a) continue;
     if(dir<0){ if(sel[i]){ const nx=sel.slice(); nx[i]=null; consider(nx,i); } }
-    else if(!sel[i]){ for(const c of [s.p,...(s.alt||[])]){ if(used.has(c)) continue; const nx=sel.slice(); nx[i]=c; consider(nx,i); } }
+    else if(!sel[i]){ for(const c of [s.id,...(s.alt||[])]){ if(used.has(c)||c===S||c===E) continue; const nx=sel.slice(); nx[i]=c; consider(nx,i); } }
   }
   return best && best.sel;
 }
 
-function plan(r,start,stay,friends){
-  const base=basePlan(r,start,stay,friends);
+function plan(spineName,S,E,start,stay,friends,key,defRoute){
+  const spine=D.spines[spineName], mid=midSlots(spine,S,E); if(!mid) return null;
+  const base=basePlan(mid,S,E,start,stay,friends); if(!base) return null;
+  const segS=segIn(spine,S), segE=segIn(spine,E);
+  const extra=(isBar(S)?1:0)+(isBar(E)?1:0);
   let sel=base.sel.slice();
-  const n0=nBars(sel), target = want[r.id]==null ? n0 : want[r.id];
+  const n0=nBars(sel)+extra, target = want[key]==null ? n0 : want[key];
   let n=n0;
-  while(n<target){ const nx=stepSel(r,sel,1,start,stay); if(!nx) break; sel=nx; n++; }
-  while(n>target){ const nx=stepSel(r,sel,-1,start,stay); if(!nx) break; sel=nx; n--; }
-  const visits=sim(r,sel,start,stay);
-  const slots=slotsFor(r), steps=[];
-  let vi=0, prev="HOME", t=start;
-  for(let i=0;i<slots.length;i++){
-    const s=slots[i];
+  while(n<target){ const nx=stepSel(mid,sel,1,S,E,segE,start,stay); if(!nx) break; sel=nx; n++; }
+  while(n>target){ const nx=stepSel(mid,sel,-1,S,E,segE,start,stay); if(!nx) break; sel=nx; n--; }
+  const visits=sim(mid,sel,S,E,segE,start,stay);
+  const startStep={start:true,id:S,arrive:start,depart:start+(isBar(S)?stay:0),kind:isBar(S)?"bar":"home",seg:segS,
+    closed:isBar(S) && !isOpen(D.places[S],start,stay)};
+  const steps=[startStep];
+  let vi=0, prev=S, t=startStep.depart;
+  for(let i=0;i<mid.length;i++){
+    const s=mid[i];
     if(sel[i]){ const v=visits[vi++]; v.added=!base.sel[i]; steps.push(v); prev=v.id; t=v.depart; }
-    else if(s.p && !s.x) steps.push({skip:true,id:s.p,from:prev,t,seg:s.seg,si:i,dropped:!!base.sel[i]});
+    else if(!s.x && !s.a && !s.f && s.id!==S && s.id!==E) steps.push({skip:true,id:s.id,from:prev,t,seg:s.seg,si:i,dropped:!!base.sel[i]});
   }
   steps.push(visits[vi]);
-  // distance: Google's total for the original path, adjusted leg by leg for every change
-  const def=["HOME",...slots.filter(s=>s.p&&!s.x).map(s=>s.p),"END"];
-  const defKeys=new Set(def.slice(1).map((b,i)=>def[i]+">"+b));
-  const pathKeys=new Set(visits.map(x=>x.from+">"+x.id));
-  let mi=r.gmi;
-  pathKeys.forEach(k=>{ if(!defKeys.has(k)) mi+=miOf(D.legs[k][1]); });
-  defKeys.forEach(k=>{ if(!pathKeys.has(k)) mi-=miOf(D.legs[k][1]); });
+  let mi=0;
+  if(defRoute){
+    // Google's total for the original path, adjusted leg by leg for every change
+    const sp=D.spines[defRoute.spine], h=sp.findIndex(x=>x.id==="HOME");
+    const def=["HOME",...sp.slice(h+1).filter(s=>!s.x&&!s.f&&!s.a).map(s=>s.id),"END"];
+    const defKeys=new Set(def.slice(1).map((b,i)=>def[i]+">"+b));
+    const pathKeys=new Set(visits.map(x=>x.from+">"+x.id));
+    mi=defRoute.gmi;
+    pathKeys.forEach(k=>{ if(!defKeys.has(k)) mi+=miOf(D.legs[k][1]); });
+    defKeys.forEach(k=>{ if(!pathKeys.has(k)) mi-=miOf(D.legs[k][1]); });
+  } else visits.forEach(x=>{ mi+=miOf(x.l[1]); });
   let walk=0,maxW=0,maxFrom="",maxTo="";
   visits.forEach(x=>{ walk+=x.w; if(x.w>maxW){ maxW=x.w; maxFrom=nameOf(x.from); maxTo=nameOf(x.id); } });
-  const bars=visits.filter(x=>x.kind==="bar"&&!x.closed).length;
-  const closed=visits.filter(x=>x.closed).length;
+  const all=[startStep,...visits];
+  const bars=all.filter(x=>x.kind==="bar"&&!x.closed).length;
+  const closed=all.filter(x=>x.closed).length;
   const friendIds=visits.filter(x=>x.kind==="friend").map(x=>x.id);
   const longs=visits.filter(x=>x.w>LONG).length;
-  return {steps,visits,mi,walk,maxW,maxFrom,maxTo,bars,closed,friendIds,longs,end:visits[visits.length-1].arrive,missed:base.missed,
-    n:nBars(sel),n0,sel,canAdd:!!stepSel(r,sel,1,start,stay),canDrop:!!stepSel(r,sel,-1,start,stay)};
+  const midIds=new Set(mid.filter(s=>s.f).map(s=>s.id));
+  return {spine:spineName,key,S,E,segS,segE,mid,steps,visits,mi,walk,maxW,maxFrom,maxTo,bars,closed,friendIds,longs,midFriends:midIds,
+    end:visits[visits.length-1].arrive,missed:base.missed,n:nBars(sel)+extra,n0,sel,
+    canAdd:!!stepSel(mid,sel,1,S,E,segE,start,stay),canDrop:!!stepSel(mid,sel,-1,S,E,segE,start,stay)};
+}
+
+const rank=c=>[c.closed,-c.friendIds.length,-c.bars,c.longs];
+const cmpA=(a,b)=>{ for(let i=0;i<a.length;i++){ if(a[i]!==b[i]) return a[i]-b[i]; } return 0; };
+function corridors(c){
+  const out=[]; const add=s=>{ if(s && CORR[s] && !out.includes(s)) out.push(s); };
+  add(c.segS); c.visits.forEach(v=>{ if(!v.end) add(v.seg); }); add(c.segE);
+  return out;
+}
+function viaName(c){ const segs=corridors(c), named=segs.filter(s=>s!=="ma"||segs.length===1); return named.length ? "Via "+andList(named.map(s=>CORR[s][0])) : "Direct"; }
+
+/* Everything shown on the page: the four routes when it's Wally's place to Max and Eric's place, otherwise up to four options. */
+function buildItems(start,stay,friends){
+  const {S,E}=SEL, pickP = friends.phillip && S!=="phillip" && E!=="phillip";
+  if(S==="HOME" && E==="END"){
+    return D.routes.map(r=>{ const c=plan(pickP?r.spineP:r.spine,S,E,start,stay,friends,r.id,r); return {id:r.id,kind:"Route",num:r.num,title:r.name,areas:r.areas,tip:r.tip,route:r,c}; });
+  }
+  const names=[...D.routes.map(r=>pickP?r.spineP:r.spine),...D.cross], found=[], seen=new Set();
+  for(const nm of names){
+    const c=plan(nm,S,E,start,stay,friends,nm.replace(/^p/,"r")+"|"+S+"|"+E,null); if(!c) continue;
+    const sig=c.visits.map(v=>v.id).join(">"); if(seen.has(sig)) continue; seen.add(sig); found.push(c);
+  }
+  // keep the four best, shown in a steady order so cards don't jump around when you press plus or minus
+  const sorted=found.slice().sort((a,b)=>cmpA(rank(a),rank(b))||a.walk-b.walk), keep=new Set(sorted.slice(0,4));
+  return found.filter(c=>keep.has(c)).map((c,k)=>({id:"o"+(k+1),kind:"Option",num:k+1,top:c===sorted[0],title:viaName(c),
+    areas:corridors(c).map(s=>CORR[s][1]).join(", then "),tip:(E==="END"&&!c.visits.some(v=>v.id==="nickel"))?NICKEL:"",route:null,c}));
 }
 
 /* Why a bar was skipped or swapped. Returns the reason clause only, for the card and the stop list. */
@@ -430,13 +494,12 @@ function swapWhy(st,stay){
 function swapReason(st,stay){ const w=swapWhy(st,stay); return "Fills in for "+D.places[st.swapFor].name+(w.startsWith("which")?", ":" ")+w+"."; }
 function swapShort(st,stay){ const w=swapWhy(st,stay); return D.places[st.id].name+" fills in for "+D.places[st.swapFor].name+(w.startsWith("which")?", ":" ")+w; }
 
-function gq(id){ return id==="END" ? D.end.q : D.places[id].q; }
+function gq(id){ return P(id).q; }
 function gurl(ids){ return "https://www.google.com/maps/dir/"+ids.map(id=>encodeURIComponent(gq(id)).replace(/%20/g,"+").replace(/%2C/g,",")).join("/")+"/data=!4m2!4m1!3e2"; }
-function links(visits){
-  const ids=visits.map(x=>x.id), out=[];
+function links(ids){
+  const out=[];
   for(let i=0;i<ids.length-1;i+=9){ out.push(ids.slice(i,i+10)); if(i+10>=ids.length) break; }
-  const lab=id=>id==="END"?D.end.name:D.places[id].name;
-  return out.map((c,k)=>({label:(out.length>1?"Part "+(k+1)+": ":"")+lab(c[0])+" to "+lab(c[c.length-1]),url:gurl(c)}));
+  return out.map((c,k)=>({label:(out.length>1?"Part "+(k+1)+": ":"")+nameOf(c[0])+" to "+nameOf(c[c.length-1]),url:gurl(c)}));
 }
 
 const ICON_MINUS='<svg viewBox="0 0 14 14" aria-hidden="true"><line x1="2" y1="7" x2="12" y2="7"/></svg>';
@@ -446,64 +509,61 @@ function barVote(id){
   return '<div class="bv vote-ui" data-bar="'+id+'"><button type="button" class="vb" data-act="bar" data-key="'+id+'" data-val="1" aria-pressed="false" aria-label="Vote up '+n+'">▲ <span class="n">0</span></button>'+
     '<button type="button" class="vb" data-act="bar" data-key="'+id+'" data-val="-1" aria-pressed="false" aria-label="Vote down '+n+'">▼ <span class="n">0</span></button><span class="vnames"></span></div>';
 }
+function barInfo(p){ return '<div class="sdesc">'+esc(p.type)+' · '+esc(p.addr)+'</div><div class="sdesc">Saturday '+esc(p.hours)+'</div>'; }
 
-function build(){
-  const cards=[], dets=[];
-  for(const r of D.routes){
-    cards.push(
-      '<article class="card" id="card-'+r.id+'" style="--sc:var(--'+r.start+');--fc:var(--'+r.finish+')">'+
-      '<div class="cardtop"><p class="num">Route '+r.num+'</p><span class="badges"><span id="badge-'+r.id+'"></span><span id="vbadge-'+r.id+'"></span></span></div><h3>'+esc(r.name)+'</h3>'+
-      '<div class="line2" aria-hidden="true"><span></span><span></span></div>'+
-      '<div id="stats-'+r.id+'"></div>'+
-      '<p class="areas">'+esc(r.areas)+'</p>'+
-      '<div class="vrow vote-ui"><button type="button" class="vbtn" data-act="route" data-key="'+r.id+'" aria-pressed="false">Vote for route '+r.num+'</button><span class="vnames" data-names="route:'+r.id+'">No votes yet</span></div>'+
-      '<a class="go" href="#'+r.id+'" data-open="'+r.id+'">See every stop</a>'+
-      '</article>');
-    dets.push(
-      '<details id="'+r.id+'" style="--fc:var(--'+r.finish+')">'+
-      '<summary><h3>Route '+r.num+': '+esc(r.name)+'</h3><span class="meta" id="meta-'+r.id+'"></span></summary>'+
-      '<div class="inner">'+
-        '<div><p style="font-weight:700;margin-bottom:6px">Walking directions in Google Maps</p><ul class="links" id="links-'+r.id+'"></ul></div>'+
-        '<div class="callout" id="call-'+r.id+'"></div>'+
-        '<ol class="strip" id="strip-'+r.id+'"></ol>'+
-      '</div></details>');
-  }
-  document.getElementById("cards").innerHTML=cards.join("");
-  document.getElementById("details").innerHTML=dets.join("");
-  document.querySelectorAll("a[data-open]").forEach(a=>a.addEventListener("click",()=>{ const d=document.getElementById(a.dataset.open); if(d) d.open=true; }));
-  document.getElementById("cards").addEventListener("click",e=>{
-    const b=e.target.closest("[data-step],[data-reset]"); if(!b) return;
-    const id=b.dataset.r, c=LAST[id]; if(!c) return;
-    if(b.dataset.reset!=null) delete want[id];
-    else { const n=c.n+(+b.dataset.step); if(n===c.n0) delete want[id]; else want[id]=n; }
-    render();
-    const again=document.querySelector('[data-r="'+id+'"][data-step="'+(b.dataset.step||"")+'"]');
-    if(again && !again.disabled) again.focus();
-  });
+/* Start and end pickers */
+const AREAS=[["Homes",["HOME","END","benjamin","david","bill","phillip"]],["Marina",["yardhouse","firestone","littlefriend"]],
+  ["Boardwalk",["socal","kassi","sidewalk","vbbk","waterfront","vbc"]],["Lincoln",["vwest","zinque","wurst","chulita"]],
+  ["Main St",["library","fortuna","ashland","jamesons","victorian"]],
+  ["Wilshire",["sugarpalm","backyard","courtside","bodega","jps","antonette","gaslite","obriens","sonny","offhand","busbys","genlee","tbird","auld"]],
+  ["Pico and Sawtelle",["tacos","local","dailypint","brixton","upperwest","tinys","neat","sns","rosegold","dots","sake","nickel"]]];
+const VALID=new Set(AREAS.flatMap(a=>a[1]));
+function optLabel(id){ const p=P(id); return p.kind==="friend" ? p.name+" ("+p.corner+")" : p.name; }
+function fillPickers(){
+  const html=AREAS.map(([g,ids])=>'<optgroup label="'+esc(g)+'">'+ids.map(id=>'<option value="'+id+'">'+esc(optLabel(id))+'</option>').join("")+'</optgroup>').join("");
+  document.getElementById("from").innerHTML=html; document.getElementById("to").innerHTML=html;
+  document.getElementById("fchecks").innerHTML=FRIENDS.map(([id,name,corner])=>'<label class="check" id="fl-'+id+'"><input type="checkbox" id="f-'+id+'">'+esc(name)+' <span>'+esc(corner)+'</span></label>').join("");
+}
+function syncPickers(){
+  document.getElementById("from").value=SEL.S; document.getElementById("to").value=SEL.E;
+  FRIENDS.forEach(([id])=>{ const off=SEL.S===id||SEL.E===id; document.getElementById("f-"+id).disabled=off; document.getElementById("fl-"+id).classList.toggle("dis",off); });
+  document.getElementById("leave-l").textContent = isBar(SEL.S) ? "Meet at "+shortOf(SEL.S)+" at" : "Leave "+shortOf(SEL.S)+" at";
+  const def=SEL.S==="HOME"&&SEL.E==="END";
+  document.getElementById("custombar").hidden=def;
+  document.getElementById("custommsg").textContent = def ? "" : "Showing "+nameOf(SEL.S)+" to "+nameOf(SEL.E)+".";
+  try{ const u=new URL(location.href); if(def){ u.searchParams.delete("from"); u.searchParams.delete("to"); } else { u.searchParams.set("from",SEL.S); u.searchParams.set("to",SEL.E); } history.replaceState(null,"",u.toString()); }catch(e){}
 }
 
 function readInputs(){
   const v=document.getElementById("leave").value||"13:00";
   let [hh,mm]=v.split(":").map(Number); if(isNaN(hh)) hh=13; if(isNaN(mm)) mm=0;
   let stay=parseInt(document.getElementById("stay").value,10); if(isNaN(stay)||stay<0) stay=20; stay=Math.min(stay,180);
-  return {start:hh*60+mm, stay, friends:{benjamin:document.getElementById("f-benjamin").checked, david:document.getElementById("f-david").checked}};
+  const friends={}; FRIENDS.forEach(([id])=>{ friends[id]=document.getElementById("f-"+id).checked && SEL.S!==id && SEL.E!==id; });
+  return {start:hh*60+mm, stay, friends};
 }
 
 function render(){
   const {start,stay,friends}=readInputs();
-  const R=D.routes.map(r=>({r,c:plan(r,start,stay,friends)}));
-  const rank=x=>[x.c.closed,-x.c.friendIds.length,-x.c.bars,x.c.longs];
-  const cmp=(a,b)=>{ for(let i=0;i<a.length;i++){ if(a[i]!==b[i]) return a[i]-b[i]; } return 0; };
-  const bestRank=R.map(rank).reduce((a,b)=>cmp(a,b)<=0?a:b);
-  for(const {r,c} of R){
-    LAST[r.id]=c;
-    const isBest=cmp(rank({c}),bestRank)===0;
-    document.getElementById("card-"+r.id).classList.toggle("best",isBest);
-    document.getElementById("badge-"+r.id).innerHTML=isBest?'<span class="badge">Best pick for a '+fmt(start)+' start</span>':'';
+  const items=buildItems(start,stay,friends);
+  const def=SEL.S==="HOME"&&SEL.E==="END";
+  const openNow=new Set([...document.querySelectorAll("#details details[open]")].map(d=>d.id));
+  const cardsEl=document.getElementById("cards"), detEl=document.getElementById("details");
+  document.getElementById("maph").textContent = def ? "All four on one map" : items.length>1 ? "All "+items.length+" options on one map" : "On the map";
+  if(!items.length){
+    cardsEl.innerHTML='<div class="empty">There\'s no walking route on this list from '+esc(nameOf(SEL.S))+' to '+esc(nameOf(SEL.E))+' yet. Try a different start or end.</div>';
+    detEl.innerHTML=""; drawMap([],friends); paintVotes(); return;
+  }
+  const bestRank=items.map(x=>rank(x.c)).reduce((a,b)=>cmpA(a,b)<=0?a:b);
+  const cards=[], dets=[];
+  for(const it of items){
+    const c=it.c, r=it.route; LAST[it.id]=c;
+    // the four routes mark every tie, as before; other starts and ends mark one option, the one with the least walking on a tie
+    const isBest=items.length>1 && (def ? cmpA(rank(c),bestRank)===0 : !!it.top);
+    const sc=c.segS&&CORR[c.segS]?c.segS:(corridors(c)[0]||"main"), fc=corridors(c).slice(-1)[0]||sc;
     const long=c.maxW>LONG;
     const ch=[], added=[], dropped=[];
     c.friendIds.forEach(id=>ch.push("Stops at "+esc(D.places[id].name)));
-    if(r.finish==="wi") Object.keys(friends).filter(f=>friends[f]&&!c.friendIds.includes(f)).forEach(f=>ch.push("Can't fit "+esc(D.places[f].name)+" in at this time"));
+    FRIENDS.forEach(([f])=>{ if(friends[f] && !c.friendIds.includes(f)) ch.push(c.midFriends.has(f) ? "Can't fit "+esc(D.places[f].name)+" in at this time" : "Doesn't go by "+esc(D.places[f].name)); });
     c.steps.forEach((x,idx)=>{
       if(x.skip){ const w=skipWhy(x,c.steps,idx,stay,c.n); if(w.dropped) dropped.push(D.places[x.id].name); else ch.push(esc(skipShort(x,c.steps,idx,stay,c.n))); }
       else if(x.added) added.push(D.places[x.id].name);
@@ -511,54 +571,90 @@ function render(){
     });
     if(added.length) ch.push("Adds "+esc(andList(added)));
     if(dropped.length) ch.push("Drops "+esc(andList(dropped))+" so this route has "+c.n+" bars");
-    const custom = want[r.id]!=null;
-    document.getElementById("stats-"+r.id).innerHTML=
+    const custom = want[c.key]!=null;
+    cards.push(
+      '<article class="card'+(isBest?' best':'')+'" id="card-'+it.id+'" style="--sc:var(--'+(r?r.start:sc)+');--fc:var(--'+(r?r.finish:fc)+')">'+
+      '<div class="cardtop"><p class="num">'+it.kind+' '+it.num+'</p><span class="badges"><span>'+(isBest?'<span class="badge">Best pick for a '+fmt(start)+' start</span>':'')+'</span><span id="vbadge-'+it.id+'"></span></span></div><h3>'+esc(it.title)+'</h3>'+
+      '<div class="line2" aria-hidden="true"><span></span><span></span></div>'+
       '<dl class="stats">'+
         '<dt>Bars</dt><dd class="stepdd"><span class="stepper">'+
-          '<button type="button" class="step" data-r="'+r.id+'" data-step="-1" aria-label="One fewer bar on route '+r.num+'"'+(c.canDrop?'':' disabled')+'>'+ICON_MINUS+'</button>'+
+          '<button type="button" class="step" data-card="'+it.id+'" data-step="-1" aria-label="One fewer bar on '+it.kind.toLowerCase()+' '+it.num+'"'+(c.canDrop?'':' disabled')+'>'+ICON_MINUS+'</button>'+
           '<output aria-live="polite">'+c.n+'</output>'+
-          '<button type="button" class="step" data-r="'+r.id+'" data-step="1" aria-label="One more bar on route '+r.num+'"'+(c.canAdd?'':' disabled')+'>'+ICON_PLUS+'</button>'+
+          '<button type="button" class="step" data-card="'+it.id+'" data-step="1" aria-label="One more bar on '+it.kind.toLowerCase()+' '+it.num+'"'+(c.canAdd?'':' disabled')+'>'+ICON_PLUS+'</button>'+
         '</span></dd>'+
         '<dt>Walking</dt><dd>'+dur(c.walk)+'</dd>'+
         '<dt>Distance</dt><dd>'+c.mi.toFixed(1)+' mi</dd>'+
         '<dt>Longest walk</dt><dd>'+(long?'<span class="pill">'+c.maxW+' min</span>':c.maxW+' min')+'</dd>'+
-        '<dt>At Max and Eric\'s</dt><dd>'+fmt(c.end)+'</dd>'+
+        '<dt>At '+esc(shortOf(SEL.E))+'</dt><dd>'+fmt(c.end)+'</dd>'+
       '</dl>'+
-      (custom?'<p style="margin-top:8px"><button type="button" class="linkbtn" data-r="'+r.id+'" data-reset="1">Back to the original '+c.n0+' bars</button></p>':'')+
-      '<p class="areas" style="margin-top:10px">'+(c.closed? '<span class="pill">'+c.closed+(c.closed>1?' bars':' bar')+' closed when you get there</span>' : '<span class="ok">Every bar open when you get there</span>')+'</p>'+
-      (ch.length?'<ul class="changes">'+ch.map(x=>'<li>'+x+'</li>').join("")+'</ul>':'');
-    document.getElementById("meta-"+r.id).textContent='Leave '+fmt(start)+' · '+c.n+' bars · '+dur(c.walk)+' walking · at Max and Eric\'s '+fmt(c.end);
-    const L=links(c.visits);
-    document.getElementById("links-"+r.id).innerHTML='<li>From Wally\'s place, walk to '+esc(nameOf(c.visits[0].id))+' first, then:</li>'+L.map(l=>'<li><a href="'+l.url+'" target="_blank" rel="noopener">'+esc(l.label)+'</a></li>').join("");
-    document.getElementById("call-"+r.id).innerHTML='<p>Longest walk: '+esc(c.maxFrom)+' to '+esc(c.maxTo)+', '+c.maxW+' min.</p>'+(r.tip?'<p>'+esc(r.tip)+'</p>':'');
-    let li='<li style="--seg:var(--'+r.start+')"><div class="time">'+fmt(start)+'</div><div class="rail"><span class="dot term"></span></div><div class="stopbody"><div class="sname">Leave Wally\'s place</div><div class="sdesc">The start</div></div></li>';
+      (custom?'<p><button type="button" class="linkbtn" data-card="'+it.id+'" data-reset="1">Back to the original '+c.n0+' bars</button></p>':'')+
+      '<p class="areas">'+(c.closed? '<span class="pill">'+c.closed+(c.closed>1?' bars':' bar')+' closed when you get there</span>' : '<span class="ok">Every bar open when you get there</span>')+'</p>'+
+      (ch.length?'<ul class="changes">'+ch.map(x=>'<li>'+x+'</li>').join("")+'</ul>':'')+
+      '<p class="areas">'+esc(it.areas)+'</p>'+
+      (def?'<div class="vrow vote-ui"><button type="button" class="vbtn" data-act="route" data-key="'+it.id+'" aria-pressed="false">Vote for route '+it.num+'</button><span class="vnames" data-names="route:'+it.id+'">No votes yet</span></div>':'')+
+      '<a class="go" href="#'+it.id+'" data-open="'+it.id+'">See every stop</a>'+
+      '</article>');
+    // stop by stop
+    const L=links([SEL.S,...c.visits.map(v=>v.id)]);
+    let li='';
     c.steps.forEach((st,idx)=>{
+      if(st.start){
+        const seg=st.seg||sc;
+        if(st.kind==="bar"){
+          const p=D.places[st.id];
+          li+='<li style="--seg:var(--'+seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot term"></span></div><div class="stopbody"><div class="sname">Start at '+esc(p.name)+(st.closed?' <span class="pill">Closed then</span>':'')+'</div>'+barInfo(p)+barVote(st.id)+'</div></li>';
+        } else {
+          const p=P(st.id);
+          li+='<li style="--seg:var(--'+seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot term"></span></div><div class="stopbody"><div class="sname">Leave '+esc(p.name)+'</div><div class="sdesc">The start'+(p.addr?' · '+esc(p.addr):'')+'</div></div></li>';
+        }
+        return;
+      }
       if(st.skip){
         li+='<li class="skip" style="--seg:var(--'+st.seg+')"><div class="time"></div><div class="rail"></div><div class="stopbody"><div class="sname">'+esc(D.places[st.id].name)+'</div><div class="sdesc">'+esc(skipReason(st,c.steps,idx,stay,c.n))+'</div>'+barVote(st.id)+'</div></li>';
         return;
       }
       const w='<div class="walk'+(st.w>LONG?' long':'')+'">'+st.w+' min walk ('+esc(st.l[1])+')</div>';
-      if(st.id==="END"){
-        li+='<li style="--seg:var(--'+st.seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot term"></span></div><div class="stopbody">'+w+'<div class="sname">Max and Eric\'s place</div><div class="sdesc">The finish</div></div></li>';
+      const seg=st.seg&&CORR[st.seg]?st.seg:fc;
+      if(st.end){
+        const p=P(st.id);
+        if(st.kind==="bar") li+='<li style="--seg:var(--'+seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot term"></span></div><div class="stopbody">'+w+'<div class="sname">'+esc(p.name)+(st.closed?' <span class="pill">Closed then</span>':'')+'</div><div class="sdesc">The finish</div>'+barInfo(p)+barVote(st.id)+'</div></li>';
+        else li+='<li style="--seg:var(--'+seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot term"></span></div><div class="stopbody">'+w+'<div class="sname">'+esc(p.name)+'</div><div class="sdesc">The finish'+(p.addr&&p.kind==="friend"?' · '+esc(p.addr):'')+'</div></div></li>';
       } else if(st.kind==="friend"){
         const p=D.places[st.id];
-        li+='<li style="--seg:var(--'+st.seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot fr"></span></div><div class="stopbody">'+w+'<div class="sname">'+esc(p.name)+' <span class="pill soft">Friend\'s place</span></div><div class="sdesc">'+esc(p.addr)+'</div></div></li>';
+        li+='<li style="--seg:var(--'+seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot fr"></span></div><div class="stopbody">'+w+'<div class="sname">'+esc(p.name)+' <span class="pill soft">Friend\'s place</span></div><div class="sdesc">'+esc(p.addr)+'</div></div></li>';
       } else {
         const p=D.places[st.id];
         const tag = st.closed ? ' <span class="pill">Closed then</span>' : st.swapFor ? ' <span class="pill soft">Backup</span>' : st.added ? ' <span class="pill added">Added</span>' : '';
-        li+='<li style="--seg:var(--'+st.seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot"></span></div><div class="stopbody">'+w+
+        li+='<li style="--seg:var(--'+seg+')"><div class="time">'+fmt(st.arrive)+'</div><div class="rail"><span class="dot"></span></div><div class="stopbody">'+w+
           '<div class="sname">'+esc(p.name)+tag+'</div>'+
-          (st.swapFor?'<div class="sdesc">'+esc(swapReason(st,stay))+'</div>':'')+
-          '<div class="sdesc">'+esc(p.type)+' · '+esc(p.addr)+'</div><div class="sdesc">Saturday '+esc(p.hours)+'</div>'+barVote(st.id)+'</div></li>';
+          (st.swapFor?'<div class="sdesc">'+esc(swapReason(st,stay))+'</div>':'')+barInfo(p)+barVote(st.id)+'</div></li>';
       }
     });
-    document.getElementById("strip-"+r.id).innerHTML=li;
+    dets.push(
+      '<details id="'+it.id+'" style="--fc:var(--'+(r?r.finish:fc)+')"'+(openNow.has(it.id)?' open':'')+'>'+
+      '<summary><h3>'+it.kind+' '+it.num+': '+esc(it.title)+'</h3><span class="meta">'+esc((isBar(SEL.S)?'Meet ':'Leave ')+fmt(start)+' · '+c.n+' bars · '+dur(c.walk)+' walking · at '+shortOf(SEL.E)+' '+fmt(c.end))+'</span></summary>'+
+      '<div class="inner">'+
+        '<div><p style="font-weight:700;margin-bottom:6px">Walking directions in Google Maps</p><ul class="links">'+L.map(l=>'<li><a href="'+l.url+'" target="_blank" rel="noopener">'+esc(l.label)+'</a></li>').join("")+'</ul></div>'+
+        '<div class="callout"><p>Longest walk: '+esc(c.maxFrom)+' to '+esc(c.maxTo)+', '+c.maxW+' min.</p>'+(it.tip?'<p>'+esc(it.tip)+'</p>':'')+'</div>'+
+        '<ol class="strip">'+li+'</ol>'+
+      '</div></details>');
   }
-  drawMap(R,friends);
+  cardsEl.innerHTML=cards.join("");
+  detEl.innerHTML=dets.join("");
+  drawMap(items,friends);
   paintVotes();
 }
 
-let PROJ=null;
+let PROJ=null, MAPARGS=null, MEAS=null, FAM=null;
+/* Width of a map label in map units, measured with the page font (a rough guess if the browser can't measure) */
+function textW(t,fs,bold){
+  try{
+    if(!MEAS){ MEAS=document.createElement("canvas").getContext("2d"); FAM=getComputedStyle(document.body).getPropertyValue("--body").trim()||"sans-serif"; }
+    MEAS.font=(bold?"700 ":"400 ")+fs+"px "+FAM;
+    const w=MEAS.measureText(t).width; if(w>0) return w*1.03+1;
+  }catch(e){}
+  return t.length*fs*(bold?0.6:0.56);
+}
 function proj(){
   if(PROJ) return PROJ;
   const pts=[[D.home.lat,D.home.lon],[D.end.lat,D.end.lon],...Object.values(D.places).map(p=>[p.lat,p.lon])];
@@ -566,64 +662,106 @@ function proj(){
   const latMax=Math.max(...lats), latMin=Math.min(...lats), lonMin=Math.min(...lons), lonMax=Math.max(...lons);
   const cosl=Math.cos(34.017*Math.PI/180), W=600, M=48, k=(W-2*M)/((lonMax-lonMin)*cosl);
   const H=Math.round((latMax-latMin)*k+2*M)+20;
-  const P=id=>{ const p= id==="HOME"?D.home: id==="END"?D.end: D.places[id]; return [M+(p.lon-lonMin)*cosl*k, M+(latMax-p.lat)*k]; };
-  PROJ={W,H,k,P}; return PROJ;
+  const Pp=id=>{ const p=P(id); return [M+(p.lon-lonMin)*cosl*k, M+(latMax-p.lat)*k]; };
+  PROJ={W,H,k,P:Pp}; return PROJ;
 }
-function drawMap(R,friends){
-  const {W,H,k,P}=proj();
+function drawMap(items,friends){
+  MAPARGS=[items,friends];
+  const {W,H,k,P:PP}=proj();
   const svg=document.getElementById("map");
   svg.setAttribute("viewBox","0 0 "+W+" "+H);
-  const xy=id=>P(id).map(v=>v.toFixed(1)).join(",");
-  const finLines=[], startLines=[];
-  let dots="";
-  for(const {r,c} of R){
-    const st=["HOME"], v=c.visits;
-    let i=0;
-    while(i<v.length && v[i].seg===r.start){ st.push(v[i].id); i++; }
-    if(i<v.length) st.push(v[i].id);
-    const fl=[st[st.length-1]]; for(let j=i+1;j<v.length;j++) fl.push(v[j].id);
-    finLines.push('<polyline class="seg '+r.finish+'" points="'+fl.map(xy).join(" ")+'"/>');
-    startLines.push('<polyline class="seg '+r.start+'" points="'+st.map(xy).join(" ")+'"/>');
+  const f1=v=>(+v).toFixed(1);
+  const xy=id=>PP(id).map(f1).join(",");
+  const lab=(x,y,t,anchor,cls)=>'<text class="lbl'+(cls?' '+cls:'')+'" x="'+f1(x)+'" y="'+f1(y)+'" text-anchor="'+anchor+'">'+t+'</text>';
+  // labels keep clear of the lines, the dots, the other labels and the edges
+  const segs=[], obst=[], placed=[];
+  const box=(x,y,r)=>{ const o=[x-r,y-r,x+r,y+r]; obst.push(o); return o; };
+  let lines="", dots="";
+  const addRun=(run,seg)=>{ lines+='<polyline class="seg '+seg+'" points="'+run.map(xy).join(" ")+'"/>'; for(let i=1;i<run.length;i++) segs.push([...PP(run[i-1]),...PP(run[i])]); };
+  // draw the best last so it sits on top
+  const order=items.slice().reverse();
+  for(const it of order){
+    const c=it.c, ids=[SEL.S,...c.visits.map(v=>v.id)], sg=[c.segS,...c.visits.map(v=>v.seg)];
+    let run=[ids[0]], runSeg=null;
+    for(let i=1;i<ids.length;i++){
+      const dseg=sg[i], oseg=sg[i-1];
+      const s = (dseg && dseg!=="main" && CORR[dseg]) ? dseg : (oseg && CORR[oseg] ? oseg : (dseg&&CORR[dseg]?dseg:"main"));
+      if(runSeg!==null && s!==runSeg){ addRun(run,runSeg); run=[ids[i-1]]; }
+      runSeg=s; run.push(ids[i]);
+    }
+    if(run.length>1) addRun(run,runSeg);
   }
-  const lines=finLines.join("")+startLines.join("");
   const drawn=new Set();
-  for(const {r,c} of R){
-    for(const x of c.visits){
-      if(x.id==="END"||x.kind==="friend"||drawn.has(x.id)) continue; drawn.add(x.id);
-      const [px,py]=P(x.id);
-      dots+='<circle class="stop '+(x.seg==="main"?"main":x.seg)+'" cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="4.5"><title>'+esc(D.places[x.id].name)+'</title></circle>';
+  for(const it of items){
+    const c=it.c;
+    const all=[{id:SEL.S,seg:c.segS,kind:isBar(SEL.S)?"bar":"home"},...c.visits];
+    for(const x of all){
+      if(x.kind!=="bar"||drawn.has(x.id)) continue; drawn.add(x.id);
+      const [px,py]=PP(x.id); box(px,py,6);
+      dots+='<circle class="stop '+(x.seg&&CORR[x.seg]?x.seg:"main")+'" cx="'+f1(px)+'" cy="'+f1(py)+'" r="4.5"><title>'+esc(D.places[x.id].name)+'</title></circle>';
     }
   }
-  const lab=(x,y,t,anchor,cls)=>'<text class="lbl'+(cls?' '+cls:'')+'" x="'+(+x).toFixed(1)+'" y="'+(+y).toFixed(1)+'" text-anchor="'+anchor+'">'+t+'</text>';
-  let fr="";
-  const short={benjamin:"Benjamin's",david:"David's"};
-  for(const [id,dx,dy,anchor] of [["benjamin",0,-14,"middle"],["david",-12,0,"end"]]){
-    const on=!!friends[id], [px,py]=P(id), s=6;
-    fr+='<rect class="friend'+(on?'':' off')+'" x="'+(px-s).toFixed(1)+'" y="'+(py-s).toFixed(1)+'" width="'+(2*s)+'" height="'+(2*s)+'" rx="2" transform="rotate(45 '+px.toFixed(1)+' '+py.toFixed(1)+')"><title>'+esc(D.places[id].name)+'</title></rect>';
-    if(on) fr+=lab(px+dx,py+dy,short[id],anchor,'fr');
-    else if(id==="benjamin") fr+=lab(px+dx,py+dy-14,short[id],anchor,'fr off')+lab(px+dx,py+dy,"optional",anchor,'fr off');
-    else fr+=lab(px+dx,py+dy,short[id],anchor,'fr off')+lab(px+dx,py+dy+14,"optional",anchor,'fr off');
-  }
-  const [hx,hy]=P("HOME"), [ex,ey]=P("END");
-  let s=lines+dots+fr;
-  s+='<circle class="term" cx="'+hx.toFixed(1)+'" cy="'+hy.toFixed(1)+'" r="8"><title>Wally\'s place</title></circle>';
-  s+='<circle class="term" cx="'+ex.toFixed(1)+'" cy="'+ey.toFixed(1)+'" r="8"><title>Max and Eric\'s place</title></circle>';
-  s+=lab(hx+14,hy+22,"Wally's place","start","strong");
-  s+=lab(ex+12,ey-12,"Max and Eric's place","start","strong");
-  const L=[["vbc",-14,30,"Venice boardwalk","end"],["socal",-6,38,"Abbot Kinney","middle"],["vwest",14,-10,"Lincoln Blvd","start"],["jamesons",-14,40,"Main St","end"],["sugarpalm",14,0,"Ocean Ave","start"],["bodega",14,4,"Downtown Santa Monica","start"],["obriens",14,22,"Wilshire Blvd","start"],["dailypint",14,8,"Pico Blvd","start"],["dots",-46,16,"Sawtelle","end"]];
-  for(const [id,dx,dy,t,a] of L){ const [x,y]=P(id); s+=lab(x+dx,y+dy,t,a,""); }
+  const [hx,hy]=PP("HOME"), [ex,ey]=PP("END");
+  const own={HOME:box(hx,hy,10), END:box(ex,ey,10)};
+  FRIENDS.forEach(([id])=>{ const [px,py]=PP(id); own[id]=box(px,py,9); });
+  const rings=[[SEL.S,"Start"],[SEL.E,"Finish"]].filter(([id])=>isBar(id));
+  rings.forEach(([id])=>{ const [x,y]=PP(id); own[id]=box(x,y,11); });
   const mile=1.609344/111.2*k;
-  s+='<line class="scale" x1="40" y1="'+(H-18)+'" x2="'+(40+mile).toFixed(1)+'" y2="'+(H-18)+'"/><line class="scale" x1="40" y1="'+(H-24)+'" x2="40" y2="'+(H-12)+'"/><line class="scale" x1="'+(40+mile).toFixed(1)+'" y1="'+(H-24)+'" x2="'+(40+mile).toFixed(1)+'" y2="'+(H-12)+'"/>';
+  obst.push([26,22,46,66],[34,H-46,46+mile,H-8]);
+  const tw=(t,cls)=>textW(t,/strong/.test(cls)?14:13,/strong|fr(?! off)/.test(cls));
+  const lbox=(x,y,ts,a,cls)=>{ const w=Math.max(...ts.map(t=>tw(t,cls))), fs=/strong/.test(cls)?14:13, l=a==="start"?x:a==="end"?x-w:x-w/2;
+    return [l-2,y-fs*0.8-2,l+w+2,y+(ts.length-1)*14+fs*0.25+2]; };
+  const over=(a,b)=>a[0]<b[2]&&b[0]<a[2]&&a[1]<b[3]&&b[1]<a[3];
+  const cut=(b,[x1,y1,x2,y2])=>{ // does the line piece cross the box (Liang and Barsky clipping)
+    const dx=x2-x1, dy=y2-y1, p=[-dx,dx,-dy,dy], q=[x1-b[0],b[2]-x1,y1-b[1],b[3]-y1]; let t0=0,t1=1;
+    for(let i=0;i<4;i++){ if(p[i]===0){ if(q[i]<0) return false; } else { const r=q[i]/p[i]; if(p[i]<0){ if(r>t1) return false; if(r>t0) t0=r; } else { if(r<t0) return false; if(r<t1) t1=r; } } }
+    return true; };
+  const clash=(b,skip)=>{ let n=(b[0]<0||b[2]>W||b[1]<0||b[3]>H)?100:0;
+    obst.forEach(o=>{ if(o!==skip && over(b,o)) n++; }); placed.forEach(o=>{ if(over(b,o)) n++; }); segs.forEach(sg=>{ if(cut(b,sg)) n++; }); return n; };
+  // try each spot in order and take the first clear one; a must-show label falls back to the spot with the fewest clashes (text goes in unescaped, so widths are right)
+  const put=(x,y,cands,ts,cls,must,skip)=>{
+    let best=null;
+    for(const [dx,dy,a] of cands){ const b=lbox(x+dx,y+dy,ts,a,cls), n=clash(b,skip); if(!best||n<best.n) best={dx,dy,a,b,n}; if(n===0) break; }
+    if(!best||(!must&&best.n>0)) return "";
+    placed.push(best.b);
+    return ts.map((t,i)=>lab(x+best.dx,y+best.dy+i*14,esc(t),best.a,cls)).join("");
+  };
+  const AROUND=[[13,5,"start"],[-13,5,"end"],[0,-14,"middle"],[0,23,"middle"],[13,-8,"start"],[-13,-8,"end"],[13,18,"start"],[-13,18,"end"],
+    [-13,32,"end"],[13,32,"start"],[-13,-22,"end"],[13,-22,"start"],[0,38,"middle"],[0,-28,"middle"],[-13,46,"end"],[13,46,"start"]];
+  let s=lines+dots, t="";
+  for(const [id,word] of rings){
+    const [x,y]=PP(id);
+    s+='<circle class="endring" cx="'+f1(x)+'" cy="'+f1(y)+'" r="9"/>';
+    t+=put(x,y,AROUND,[word+": "+shortOf(id)],"strong",true,own[id]);
+  }
+  s+='<circle class="term" cx="'+f1(hx)+'" cy="'+f1(hy)+'" r="8"><title>Wally\'s place</title></circle>';
+  s+='<circle class="term" cx="'+f1(ex)+'" cy="'+f1(ey)+'" r="8"><title>Max and Eric\'s place</title></circle>';
+  t+=put(ex,ey,[[12,-12,"start"],[14,5,"start"],[-14,-12,"end"],[0,26,"middle"],[-14,5,"end"],[0,-16,"middle"]],["Max and Eric's place"],"strong",true,own.END);
+  t+=put(hx,hy,[[-14,18,"end"],[-14,-12,"end"],[0,26,"middle"],[14,5,"start"],[-14,5,"end"],[0,-16,"middle"],[14,24,"start"],[-14,32,"end"]],["Wally's place"],"strong",true,own.HOME);
+  const FSPOT={right:[12,4,"start"],left:[-12,4,"end"],above:[0,-14,"middle"],below:[0,22,"middle"]};
+  const FPREF={benjamin:["above","left","right","below"],david:["left","right","above","below"],bill:["right","left","above","below"],phillip:["below","left","right","above"]};
+  for(const [id] of FRIENDS){
+    const on=!!friends[id]||SEL.S===id||SEL.E===id, [px,py]=PP(id), w=6, short=shortOf(id);
+    s+='<rect class="friend'+(on?'':' off')+'" x="'+f1(px-w)+'" y="'+f1(py-w)+'" width="'+(2*w)+'" height="'+(2*w)+'" rx="2" transform="rotate(45 '+f1(px)+' '+f1(py)+')"><title>'+esc(D.places[id].name)+'</title></rect>';
+    // two lines when it's optional: the name, then "optional" under it
+    const ts=on?[short]:[short,"optional"];
+    const cands=FPREF[id].map(k=>{ const [dx,dy,a]=FSPOT[k]; return [dx, on?dy:(k==="above"?-28:k==="below"?22:0), a]; });
+    t+=put(px,py,cands,ts,on?"fr":"fr off",true,own[id]);
+  }
+  const LBL=[["vbc",-14,30,"Venice boardwalk","end"],["socal",0,-14,"Abbot Kinney","middle"],["vwest",14,-10,"Lincoln Blvd","start"],["jamesons",-14,40,"Main St","end"],["sugarpalm",14,0,"Ocean Ave","start"],["bodega",14,4,"Downtown Santa Monica","start"],["obriens",14,22,"Wilshire Blvd","start"],["dailypint",14,8,"Pico Blvd","start"],["dots",-46,16,"Sawtelle","end"],["yardhouse",41,-44,"Marina del Rey","end"]];
+  for(const [id,dx,dy,txt,a] of LBL){ const [x,y]=PP(id); t+=put(x,y,[[dx,dy,a]],[txt],"",false,null); }
+  s+=t;
+  s+='<line class="scale" x1="40" y1="'+(H-18)+'" x2="'+f1(40+mile)+'" y2="'+(H-18)+'"/><line class="scale" x1="40" y1="'+(H-24)+'" x2="40" y2="'+(H-12)+'"/><line class="scale" x1="'+f1(40+mile)+'" y1="'+(H-24)+'" x2="'+f1(40+mile)+'" y2="'+(H-12)+'"/>';
   s+=lab(40+mile/2,H-28,"1 mile","middle","");
   s+='<path class="north" d="M36 26 L44 46 L36 41 L28 46 Z"/>'+lab(36,62,"N","middle","strong");
   svg.innerHTML=s;
+  return placed.length;
 }
 
 /* ---------- Live votes and comments (Firebase Realtime Database) ---------- */
 const FB_URLS=["https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js","https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"];
 const FB_CONF={databaseURL:"https://westside-crawl-default-rtdb.firebaseio.com"};
 const TIMES=["11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00"];
-const FRIENDS=[["benjamin","Benjamin's place","4th & Idaho"],["david","David's place","16th & Washington"]];
 let V={people:{},route:{},time:{},friends:{},bars:{},comments:{}};
 let FB=null, DB=null, pending=null;
 const ME={cid:null,name:""};
@@ -677,8 +815,9 @@ function paintVotes(){
   if(!document.getElementById("vote")) return;
   // routes
   const routeCount={};
+  D.routes.forEach(r=>{ routeCount[r.id]=voters(V.route,v=>v===r.id).length; });
   document.querySelectorAll('[data-act="route"]').forEach(b=>{
-    const key=b.dataset.key, ns=voters(V.route,v=>v===key); routeCount[key]=ns.length;
+    const key=b.dataset.key, ns=voters(V.route,v=>v===key);
     b.setAttribute("aria-pressed",String(V.route[ME.cid]===key && !!nm(ME.cid)));
     const out=document.querySelector('[data-names="route:'+key+'"]');
     if(out) out.textContent = ns.length ? plural(ns.length,"vote")+": "+andList(ns) : "No votes yet";
@@ -766,6 +905,20 @@ document.addEventListener("click",e=>{
     });
     return;
   }
+  const st=e.target.closest("[data-step],[data-reset]");
+  if(st && st.dataset.card){
+    const id=st.dataset.card, c=LAST[id]; if(!c) return;
+    if(st.dataset.reset!=null) delete want[c.key];
+    else { const n=c.n+(+st.dataset.step); if(n===c.n0) delete want[c.key]; else want[c.key]=n; }
+    render();
+    const again=document.querySelector('[data-card="'+id+'"][data-step="'+(st.dataset.step||"")+'"]');
+    if(again && !again.disabled) again.focus();
+    return;
+  }
+  const op=e.target.closest("a[data-open]");
+  if(op){ const d=document.getElementById(op.dataset.open); if(d) d.open=true; return; }
+  if(e.target.id==="swap"){ const s=SEL.S; SEL.S=SEL.E; SEL.E=s; syncPickers(); render(); return; }
+  if(e.target.id==="backdef"){ SEL.S="HOME"; SEL.E="END"; syncPickers(); render(); return; }
   if(e.target.id==="namechange"){ askName(); return; }
   if(e.target.id==="namesave"){ const n=cleanName(document.getElementById("vname").value); if(n) saveName(n); else document.getElementById("vname").focus(); return; }
   if(e.target.id==="dlgcancel"){ pending=null; document.getElementById("namedlg").close("cancel"); return; }
@@ -820,12 +973,18 @@ async function startVotes(){
   },()=>setStatus("err","Can't reach the live votes right now."));
 }
 
-document.getElementById("legend").innerHTML=["bw","ln","main","wi","pi"].map(k=>'<span><i style="--c:var(--'+k+')"></i>'+SEGNAME[k]+'</span>').join("")+'<span><i class="dia"></i>Friend\'s place</span>';
+document.getElementById("legend").innerHTML=["ma","bw","ln","main","wi","pi"].map(k=>'<span><i style="--c:var(--'+k+')"></i>'+SEGNAME[k]+'</span>').join("")+'<span><i class="dia"></i>Friend\'s place</span>';
+fillPickers();
+try{ const q=new URLSearchParams(location.search), f=q.get("from"), t=q.get("to"); if(f&&t&&f!==t&&VALID.has(f)&&VALID.has(t)){ SEL.S=f; SEL.E=t; } }catch(e){}
+syncPickers();
 ["leave","stay"].forEach(id=>document.getElementById(id).addEventListener("input",render));
-["f-benjamin","f-david"].forEach(id=>document.getElementById(id).addEventListener("change",render));
-build();
+document.getElementById("fchecks").addEventListener("change",render);
+document.getElementById("from").addEventListener("change",e=>{ const f=e.target.value; if(f===SEL.E) SEL.E=SEL.S; SEL.S=f; syncPickers(); render(); });
+document.getElementById("to").addEventListener("change",e=>{ const t=e.target.value; if(t===SEL.S) SEL.S=SEL.E; SEL.E=t; syncPickers(); render(); });
 render();
 startVotes();
+// the map labels are placed by width, so place them again once the page font is in
+try{ Promise.all(["400 13px","700 13px","700 14px"].map(f=>document.fonts.load(f+' "Atkinson Hyperlegible"'))).then(()=>{ if(MAPARGS) drawMap(...MAPARGS); },()=>{}); }catch(e){}
 </script>
 
 </body>
